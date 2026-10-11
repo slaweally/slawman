@@ -1,0 +1,8 @@
+{% if block('breadcrumb_items') is defined and block('breadcrumb_items')|trim is not empty %}
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb breadcrumb-arrows">
+            <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+            {% block breadcrumb_items %}{% endblock %}
+        </ol>
+    </nav>
+{% endif %}

@@ -1,0 +1,25 @@
+{# Görsel ayar alanı: gizli URL + önizleme + medya seç + dosya yükle #}
+<div class="media-asset-field mb-3" data-media-asset-field data-target-input="{{ inputId }}">
+    <label class="form-label" for="{{ inputId }}">{{ label }}</label>
+    {% if help is defined and help %}
+        <p class="form-text mb-2">{{ help }}</p>
+    {% endif %}
+    <input type="hidden" id="{{ inputId }}" name="{{ inputName|default('settings[' ~ settingKey ~ ']') }}" value="{{ value|default('') }}">
+    <div class="media-asset-field__preview img-preview mb-2" id="{{ previewId }}">
+        {% if value|default('') %}
+            <img src="{{ value }}" alt="{{ label }}">
+        {% endif %}
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" data-media-pick="{{ inputId }}">
+            <i class="bi bi-images me-1"></i> Medyadan Seç
+        </button>
+        <label class="btn btn-sm btn-outline-secondary mb-0">
+            <i class="bi bi-upload me-1"></i> Dosya Yükle
+            <input type="file" name="{{ uploadName }}" accept="{{ accept|default('image/*') }}" hidden data-media-upload="{{ inputId }}">
+        </label>
+        <button type="button" class="btn btn-sm btn-outline-danger" data-media-clear="{{ inputId }}" {{ value|default('') ? '' : 'hidden' }}>
+            <i class="bi bi-x-lg me-1"></i> Kaldır
+        </button>
+    </div>
+</div>

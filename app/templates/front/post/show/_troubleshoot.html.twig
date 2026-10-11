@@ -1,0 +1,44 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{{ layout.breadcrumb([
+    {url: path('front_troubleshoot'), label: 'Hata / Çözüm'},
+    {label: post.title}
+]) }}
+
+{{ layout.type_strip('troubleshoot') }}
+
+<div class="detail-panel detail-panel--troubleshoot">
+    <header class="detail-head">
+        <h1 class="detail-head__title">{{ post.title }}</h1>
+        {% include 'front/post/show/_meta.html.twig' %}
+    </header>
+
+    {% if post.excerpt %}
+        <div class="detail-lead">{{ post.excerpt }}</div>
+    {% endif %}
+
+    <section class="ts-error-block" aria-labelledby="ts-error-heading">
+        <div class="ts-error-block__header">
+            <span class="ts-error-block__icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
+            <h2 id="ts-error-heading" class="ts-error-block__title">Hata</h2>
+        </div>
+        {% if post_meta(post, 'error_context') %}
+            <p class="ts-error-block__context">{{ post_meta(post, 'error_context') }}</p>
+        {% endif %}
+        <div class="ts-error-block__body">
+            {% if post_meta(post, 'error_content') %}
+                <pre class="ts-error-block__code font-mono"><code>{{ post_meta(post, 'error_content') }}</code></pre>
+            {% else %}
+                <p class="ts-error-block__empty">Hata detayı belirtilmemiş.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="ts-solution-block" aria-labelledby="ts-solution-heading">
+        <div class="ts-solution-block__header">
+            <span class="ts-solution-block__icon"><i class="bi bi-check-circle-fill"></i></span>
+            <h2 id="ts-solution-heading" class="ts-solution-block__title">Çözüm</h2>
+        </div>
+        <div class="detail-body ts-solution-block__body troubleshoot-prose">{{ post.content|raw }}</div>
+    </section>
+</div>

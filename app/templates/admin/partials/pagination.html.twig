@@ -1,0 +1,32 @@
+{% if pageCount > 1 %}
+<nav class="d-flex justify-content-between align-items-center flex-wrap gap-2" aria-label="Sayfalama">
+    <div class="text-muted small">
+        Toplam <strong>{{ totalCount }}</strong> kayıt · Sayfa {{ current }} / {{ pageCount }}
+    </div>
+    <ul class="pagination pagination-sm mb-0">
+        <li class="page-item{{ previous is not defined ? ' disabled' : '' }}">
+            {% if previous is defined %}
+                <a class="page-link" rel="prev" href="{{ path(route, knp_pagination_query(query, previous, options)) }}">‹</a>
+            {% else %}
+                <span class="page-link">‹</span>
+            {% endif %}
+        </li>
+        {% for page in pagesInRange %}
+            <li class="page-item{{ page == current ? ' active' : '' }}">
+                {% if page == current %}
+                    <span class="page-link">{{ page }}</span>
+                {% else %}
+                    <a class="page-link" href="{{ path(route, knp_pagination_query(query, page, options)) }}">{{ page }}</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+        <li class="page-item{{ next is not defined ? ' disabled' : '' }}">
+            {% if next is defined %}
+                <a class="page-link" rel="next" href="{{ path(route, knp_pagination_query(query, next, options)) }}">›</a>
+            {% else %}
+                <span class="page-link">›</span>
+            {% endif %}
+        </li>
+    </ul>
+</nav>
+{% endif %}

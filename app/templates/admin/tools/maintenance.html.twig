@@ -1,0 +1,189 @@
+{% extends 'admin/layout/base.html.twig' %}
+
+{% block title %}Sistem Bakım — Temizlik{% endblock %}
+{% block page_subtitle %}Revizyon geçmişi ve veritabanı bakım işlemleri{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_tools_index') }}">Araçlar</a></li>
+        <li class="breadcrumb-item active">Sistem Bakım</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-clock-rotate-left me-1"></i> İçerik Revizyon Temizliği
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-4">
+                    Her kayıt, düzenleme ve yayınlama sırasında otomatik revizyon oluşturur.
+                    Bu araçlar yalnızca <strong>revizyon geçmişini</strong> temizler; yayınlanmış içeriklere dokunmaz.
+                </p>
+
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body py-3">
+                        <h3 class="h6 mb-3">Her içerikte son N revizyonu bırak</h3>
+                        <form method="post" action="{{ path('admin_tools_maintenance_revisions_prune') }}" class="row g-3 align-items-end">
+                            <input type="hidden" name="_token" value="{{ csrf_token('maintenance_revisions_prune') }}">
+                            <div class="col-md-4">
+                                <label class="form-label" for="keep_per_post">İçerik başına sakla</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="keep_per_post" name="keep_per_post" value="15" min="0" max="500" required>
+                                    <span class="input-group-text">adet</span>
+                                </div>
+                                <small class="text-muted">0 = tüm revizyonları sil</small>
+                            </div>
+                            <div class="col-md-8">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-broom me-1"></i> Revizyonları Temizle
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body py-3">
+                        <h3 class="h6 mb-3">Belirli günden eski revizyonları sil</h3>
+                        <form method="post" action="{{ path('admin_tools_maintenance_revisions_delete_older') }}" class="row g-3 align-items-end">
+                            <input type="hidden" name="_token" value="{{ csrf_token('maintenance_revisions_delete_older') }}">
+                            <div class="col-md-4">
+                                <label class="form-label" for="older_than_days">Şundan eski</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="older_than_days" name="older_than_days" value="90" min="1" max="3650" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <button type="submit" class="btn btn-outline-warning">
+                                    <i class="fa-solid fa-calendar-xmark me-1"></i> Eskileri Sil
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card border-danger">
+                    <div class="card-header bg-danger-lt text-danger">Tehlikeli Bölge</div>
+                    <div class="card-body">
+                        <h3 class="h6 mb-2">Tüm revizyon geçmişini sil</h3>
+                        <p class="text-muted small mb-3">
+                            Bu işlem geri alınamaz. Mevcut içerikler korunur; yalnızca revizyon kayıtları silinir.
+                        </p>
+                        <form method="post" action="{{ path('admin_tools_maintenance_revisions_delete_all') }}" class="row g-3 align-items-center" onsubmit="return confirm('Tüm revizyon geçmişi kalıcı olarak silinecek. Emin misiniz?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('maintenance_revisions_delete_all') }}">
+                            <div class="col-md-8">
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="confirm_delete_all" value="1">
+                                    <span class="form-check-label">Tüm revizyonları kalıcı olarak silmek istiyorum</span>
+                                </label>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fa-solid fa-trash me-1"></i> Tümünü Sil
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-danger mb-3">
+            <div class="card-header bg-danger-lt text-danger">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> Kritik Bölge — Log Süpürme
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Takip panelindeki tüm loglar (<code>tracker_log</code>), güvenlik/WAF alarmları
+                    (<code>security_alert</code>) ve audit kayıtları (<code>audit_log</code>) kalıcı olarak silinir.
+                    Aktif IP banları da sıfırlanır. Bu işlem <strong>geri alınamaz</strong>.
+                </p>
+                <button type="button" id="sweep-all-logs-btn" class="btn btn-danger w-100"
+                        data-url="{{ path('admin_tools_maintenance_sweep_all_logs') }}"
+                        data-token="{{ csrf_token('maintenance_sweep_all_logs') }}">
+                    <i class="fa-solid fa-broom me-1"></i> Tüm Sistem Çöplerini ve Logları Süpür
+                </button>
+                <div id="sweep-all-logs-result" class="small mt-2"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Revizyon Özeti</div>
+            <div class="card-body">
+                <ul class="dash-type-list">
+                    <li><span>Toplam revizyon</span><strong>{{ revisionStats.total|number_format(0, ',', '.') }}</strong></li>
+                    <li><span>Revizyonlu içerik</span><strong>{{ revisionStats.postCount|number_format(0, ',', '.') }}</strong></li>
+                    <li><span>İçerik başına ortalama</span><strong>{{ revisionStats.averagePerPost }}</strong></li>
+                    <li>
+                        <span>En eski kayıt</span>
+                        <strong>{{ revisionStats.oldest ? revisionStats.oldest|date('d.m.Y') : '—' }}</strong>
+                    </li>
+                    <li>
+                        <span>En yeni kayıt</span>
+                        <strong>{{ revisionStats.newest ? revisionStats.newest|date('d.m.Y') : '—' }}</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">İpuçları</div>
+            <div class="card-body small text-muted">
+                <ul class="mb-0 ps-3">
+                    <li class="mb-2">Düzenleme sayfasındaki revizyon listesi yalnızca son 15 kaydı gösterir.</li>
+                    <li class="mb-2">Üretim ortamında içerik başına <strong>10–20</strong> revizyon genelde yeterlidir.</li>
+                    <li>Tüm temizlik işlemleri audit log'a yazılır.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const btn = document.getElementById('sweep-all-logs-btn');
+    const result = document.getElementById('sweep-all-logs-result');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        if (!confirm('Tüm takip logları, güvenlik alarmları ve audit kayıtları kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misiniz?')) {
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Temizleniyor...';
+
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            body: new URLSearchParams({ _token: btn.dataset.token }),
+            headers: { 'Accept': 'application/json' },
+        })
+            .then((r) => r.json())
+            .then((res) => {
+                if (res.ok) {
+                    const lines = Object.entries(res.breakdown).map(([label, count]) => `${label}: ${count}`).join(' · ');
+                    result.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>Toplam ${res.total} satır temizlendi (${lines})</span>`;
+                } else {
+                    result.innerHTML = `<span class="text-danger">${res.error}</span>`;
+                }
+            })
+            .catch(() => {
+                result.innerHTML = '<span class="text-danger">İstek başarısız oldu.</span>';
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-broom me-1"></i> Tüm Sistem Çöplerini ve Logları Süpür';
+            });
+    });
+})();
+</script>
+{% endblock %}

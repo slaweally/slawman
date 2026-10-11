@@ -1,0 +1,29 @@
+{% extends 'front/layout/base.html.twig' %}
+
+{% set fullWidthTypes = ['note', 'snippet', 'software'] %}
+{% set noSidebarTypes = ['note', 'snippet', 'software'] %}
+
+{% block layout %}
+<div class="content-grid {{ post.type.value in fullWidthTypes ? 'content-grid--full' : '' }}">
+    <article class="content-primary ctype-detail ctype-detail--{{ post.type.value }}">
+        {% include 'front/post/show/_view_count.html.twig' %}
+        {% include ['front/post/show/_' ~ post.type.value ~ '.html.twig', 'front/post/show/_article.html.twig'] %}
+        {% if post.type.value not in ['note'] %}
+            {% include 'front/post/show/_footer.html.twig' %}
+        {% endif %}
+        {% if post.type.value not in ['page'] %}
+            {% include 'front/partials/comments.html.twig' %}
+        {% endif %}
+    </article>
+    {% if post.type.value not in noSidebarTypes %}
+        <aside class="content-sidebar hidden lg:block">{% include 'front/partials/sidebar.html.twig' %}</aside>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if commentsEnabled and turnstile_enabled() %}
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" async defer></script>
+    {% endif %}
+{% endblock %}

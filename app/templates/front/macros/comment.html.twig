@@ -1,0 +1,8 @@
+{# Yorum yazarı — web sitesi varsa isim link olur #}
+{% macro author_name(comment) %}
+    {% if comment.authorWebsite %}
+        <a href="{{ comment.authorWebsite }}" class="comment-item__author comment-item__author-link" rel="nofollow ugc noopener" target="_blank">{{ comment.authorName }}</a>
+    {% else %}
+        <strong class="comment-item__author">{{ comment.authorName }}</strong>
+    {% endif %}
+{% endmacro %}

@@ -1,0 +1,7 @@
+{% extends 'email/layout.html.twig' %}
+
+{% block email_body %}
+<div style="font-size:15px;color:#1c2128;line-height:1.7;">
+    {{ bodyHtml|raw }}
+</div>
+{% endblock %}

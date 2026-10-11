@@ -1,0 +1,92 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Yandex Metrika{% endblock %}
+{% block page_subtitle %}Son 7 günün Yandex Metrika verileri{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Dashboard</a>
+{% endblock %}
+{% block body %}
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item"><a class="nav-link" href="{{ path('admin_analytics_index') }}">Genel İstatistik</a></li>
+    <li class="nav-item"><a class="nav-link active" href="{{ path('admin_analytics_metrika') }}">Yandex Metrika</a></li>
+</ul>
+
+{% if not isReady %}
+    <div class="alert alert-warning">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+        Yandex Metrika bağlı değil veya sayaç ID tanımlı değil.
+        <a href="{{ path('admin_tools_analytics') }}">Araçlar → Analitik'ten Yandex Metrika'yı bağlayın.</a>
+    </div>
+{% else %}
+    <div class="row row-cards g-3 mb-4">
+        <div class="col-md-3"><div class="card dash-stat dash-stat--purple"><div class="card-body"><div class="dash-stat__value">{{ statistics.total.visitors }}</div><div class="dash-stat__label">Ziyaretçi</div></div></div></div>
+        <div class="col-md-3"><div class="card dash-stat dash-stat--blue"><div class="card-body"><div class="dash-stat__value">{{ statistics.total.pageviews }}</div><div class="dash-stat__label">Görüntülenme</div></div></div></div>
+        <div class="col-md-3"><div class="card dash-stat dash-stat--green"><div class="card-body"><div class="dash-stat__value">{{ statistics.total.visits }}</div><div class="dash-stat__label">Ziyaret</div></div></div></div>
+        <div class="col-md-3"><div class="card dash-stat dash-stat--orange"><div class="card-body"><div class="dash-stat__value">{{ statistics.total.page_depth|round(2) }}</div><div class="dash-stat__label">Sayfa Derinliği</div></div></div></div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h3 class="card-title mb-0">Günlük Detay</h3></div>
+        <div class="table-responsive">
+            <table class="table table-sm table-vcenter">
+                <thead><tr><th>Tarih</th><th>Ziyaretçi</th><th>Görüntülenme</th><th>Ziyaret</th><th>Yeni Ziyaretçi (%)</th></tr></thead>
+                <tbody>
+                {% for date, day in statistics.daily %}
+                    <tr>
+                        <td>{{ date|slice(8, 2) }}.{{ date|slice(5, 2) }}.{{ date|slice(0, 4) }}</td>
+                        <td>{{ day.visitors }}</td>
+                        <td>{{ day.pageviews }}</td>
+                        <td>{{ day.visits }}</td>
+                        <td>{{ day.new_visitors|round(1) }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-muted">Bu dönem için kayıt yok.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><h3 class="card-title mb-0">Popüler İçerik</h3></div>
+                <div class="list-group list-group-flush">
+                    {% for item in popularContent %}
+                        <div class="list-group-item d-flex justify-content-between gap-2">
+                            <span class="small text-truncate">{{ item.url }}</span>
+                            <span class="badge bg-blue-lt">{{ item.pageviews }}</span>
+                        </div>
+                    {% else %}<div class="list-group-item text-muted">Veri yok.</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><h3 class="card-title mb-0">Yönlendiren Siteler</h3></div>
+                <div class="list-group list-group-flush">
+                    {% for item in referrers %}
+                        <div class="list-group-item d-flex justify-content-between gap-2">
+                            <span class="small text-truncate">{{ item.url }}</span>
+                            <span class="badge bg-green-lt">{{ item.visits }}</span>
+                        </div>
+                    {% else %}<div class="list-group-item text-muted">Veri yok.</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><h3 class="card-title mb-0">Arama Terimleri</h3></div>
+                <div class="list-group list-group-flush">
+                    {% for item in searchTerms %}
+                        <div class="list-group-item d-flex justify-content-between gap-2">
+                            <span class="small text-truncate">{{ item.name }}</span>
+                            <span class="badge bg-secondary-lt">{{ item.visits }}</span>
+                        </div>
+                    {% else %}<div class="list-group-item text-muted">Veri yok.</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

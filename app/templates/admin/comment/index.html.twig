@@ -1,0 +1,108 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Yorumlar{% endblock %}
+{% block page_actions %}
+    <div class="btn-group btn-group-sm">
+        <a href="{{ path('admin_comment_index') }}" class="btn {{ currentStatus == '' ? 'btn-primary' : 'btn-outline-primary' }}">Tümü</a>
+        <a href="{{ path('admin_comment_index', {status: 'pending'}) }}" class="btn {{ currentStatus == 'pending' ? 'btn-primary' : 'btn-outline-primary' }}">Bekleyen</a>
+        <a href="{{ path('admin_comment_index', {status: 'approved'}) }}" class="btn {{ currentStatus == 'approved' ? 'btn-primary' : 'btn-outline-primary' }}">Onaylı</a>
+        <a href="{{ path('admin_comment_index', {status: 'spam'}) }}" class="btn {{ currentStatus == 'spam' ? 'btn-primary' : 'btn-outline-primary' }}">Spam</a>
+        {% if trashCount > 0 %}
+            <a href="{{ path('admin_comment_index', {status: 'trash'}) }}" class="btn {{ currentStatus == 'trash' ? 'btn-primary' : 'btn-outline-danger' }}">Çöp ({{ trashCount }})</a>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block body %}
+{% if pendingCount %}<div class="mb-3"><span class="badge bg-warning text-dark">{{ pendingCount }} onay bekliyor</span></div>{% endif %}
+{% if currentStatus == 'trash' and trashCount > 0 %}
+    <div class="mb-3 d-flex align-items-center gap-2">
+        <span class="text-muted small">{{ trashCount }} yorum çöp kutusunda (eski soft-delete kayıtları).</span>
+        <form method="post" action="{{ path('admin_comment_purge_trash') }}" class="d-inline" onsubmit="return confirm('Çöp kutusundaki tüm yorumlar kalıcı olarak silinecek. Emin misiniz?');">
+            <input type="hidden" name="_token" value="{{ csrf_token('comment_purge_trash') }}">
+            <button type="submit" class="btn btn-sm btn-danger">Çöp Kutusunu Boşalt</button>
+        </form>
+    </div>
+{% endif %}
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table table-hover">
+            <thead>
+                <tr>
+                    <th>Yazar</th>
+                    <th>İçerik / Yazı</th>
+                    <th>Durum</th>
+                    <th>Tarih</th>
+                    <th class="text-end">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for comment in pagination %}
+                <tr>
+                    <td>
+                        <strong>{{ comment.authorName }}</strong>
+                        <div class="small text-muted">{{ comment.authorEmail }}</div>
+                        {% if comment.authorWebsite %}
+                            <a href="{{ comment.authorWebsite }}" class="small d-block text-truncate" style="max-width:200px" target="_blank" rel="nofollow ugc noopener">{{ comment.authorWebsite }}</a>
+                        {% endif %}
+                    </td>
+                    <td style="max-width:360px">
+                        <div class="small mb-1">{{ comment.content|striptags|truncate(120) }}</div>
+                        {% if comment.post %}
+                            <a href="{{ post_path(comment.post) }}" class="small" target="_blank" rel="noopener">
+                                {{ comment.post.title|default(comment.post.slug)|truncate(40) }}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {{ comment.status.value == 'approved' ? 'bg-success-lt' : (comment.status.value == 'pending' ? 'bg-warning-lt' : 'bg-secondary-lt') }}">
+                            {{ comment.status.value }}
+                        </span>
+                    </td>
+                    <td class="small text-muted">{{ comment.createdAt|date('d.m.Y H:i') }}</td>
+                    <td class="text-end text-nowrap">
+                        {% if comment.status.value != 'approved' %}
+                        <form method="post" action="{{ path('admin_comment_approve', {id: comment.id}) }}" class="d-inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('comment' ~ comment.id) }}">
+                            <input type="hidden" name="back_status" value="{{ currentStatus }}">
+                            <input type="hidden" name="back_page" value="{{ app.request.query.get('page', 1) }}">
+                            <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check2"></i> Onayla</button>
+                        </form>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#reply-{{ comment.id }}">
+                            <i class="bi bi-reply"></i> Yanıtla
+                        </button>
+                        <form method="post" action="{{ path('admin_comment_status', {id: comment.id, status: 'spam'}) }}" class="d-inline" onsubmit="return confirm('Spam olarak işaretlensin mi?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('comment' ~ comment.id) }}">
+                            <input type="hidden" name="back_status" value="{{ currentStatus }}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Spam</button>
+                        </form>
+                        <form method="post" action="{{ path('admin_comment_delete', {id: comment.id}) }}" class="d-inline" onsubmit="return confirm('Bu yorum kalıcı olarak silinecek. Emin misiniz?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('comment' ~ comment.id) }}">
+                            <input type="hidden" name="back_status" value="{{ currentStatus }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr class="collapse" id="reply-{{ comment.id }}">
+                    <td colspan="5" class="bg-light">
+                        <form method="post" action="{{ path('admin_comment_reply', {id: comment.id}) }}" class="p-2">
+                            <input type="hidden" name="_token" value="{{ csrf_token('comment' ~ comment.id) }}">
+                            <input type="hidden" name="back_status" value="{{ currentStatus }}">
+                            <input type="hidden" name="back_page" value="{{ app.request.query.get('page', 1) }}">
+                            <label class="form-label small mb-1">Yanıt — {{ comment.authorName }}</label>
+                            <textarea name="content" class="form-control form-control-sm mb-2" rows="3" required maxlength="5000" placeholder="Yanıtınızı yazın..."></textarea>
+                            <button type="submit" class="btn btn-sm btn-primary">Yanıtı Yayınla</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5" class="text-muted text-center py-4">Yorum bulunamadı.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination.pageCount > 1 %}
+    <div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div>
+    {% endif %}
+</div>
+{% endblock %}

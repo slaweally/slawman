@@ -1,0 +1,6 @@
+stof_doctrine_extensions:
+    default_locale: tr_TR
+    orm:
+        default:
+            timestampable: true
+            softdeleteable: true

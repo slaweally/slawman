@@ -1,0 +1,20 @@
+{% extends 'email/layout.html.twig' %}
+
+{% block email_body %}
+<h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#0d1117;">{{ title }}</h1>
+{% if intro %}
+<p style="margin:0 0 16px;font-size:15px;color:#57606a;">{{ intro|nl2br }}</p>
+{% endif %}
+{% if body %}
+<div style="margin:0 0 20px;font-size:15px;color:#1c2128;">{{ body|raw }}</div>
+{% endif %}
+{% if ctaText %}
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 0;">
+    <tr>
+        <td style="border-radius:6px;background:#2D5BE3;">
+            <a href="{{ ctaUrl }}" style="display:inline-block;padding:12px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">{{ ctaText }}</a>
+        </td>
+    </tr>
+</table>
+{% endif %}
+{% endblock %}

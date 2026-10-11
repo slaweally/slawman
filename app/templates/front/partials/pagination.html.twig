@@ -1,0 +1,25 @@
+{% if pageCount > 1 %}
+<nav class="pagination" aria-label="Sayfalama">
+    <ul class="pagination-list">
+        {% if previous is defined %}
+            <li><a class="pagination-link pagination-prev" rel="prev" href="{{ path(route, knp_pagination_query(query, previous, options)) }}">‹</a></li>
+        {% else %}
+            <li><span class="pagination-link pagination-prev is-disabled">‹</span></li>
+        {% endif %}
+
+        {% for page in pagesInRange %}
+            {% if page == current %}
+                <li><span class="pagination-link is-active" aria-current="page">{{ page }}</span></li>
+            {% else %}
+                <li><a class="pagination-link" href="{{ path(route, knp_pagination_query(query, page, options)) }}">{{ page }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if next is defined %}
+            <li><a class="pagination-link pagination-next" rel="next" href="{{ path(route, knp_pagination_query(query, next, options)) }}">›</a></li>
+        {% else %}
+            <li><span class="pagination-link pagination-next is-disabled">›</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}

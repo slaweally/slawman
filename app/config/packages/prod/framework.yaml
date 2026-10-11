@@ -1,0 +1,4 @@
+# CloudPanel / Cloudflare arkasında HTTPS ve oturum için gerekli.
+framework:
+    trusted_proxies: '%env(default::SYMFONY_TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-host']

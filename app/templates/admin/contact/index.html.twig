@@ -1,0 +1,25 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Mesajlar{% endblock %}
+{% block body %}
+<div class="card"><div class="table-responsive"><table class="table card-table">
+    <thead><tr><th>Gönderen</th><th>Konu</th><th>Okundu</th><th>Tarih</th><th></th></tr></thead>
+    <tbody>
+    {% for msg in messages %}
+        <tr class="{{ msg.isRead ? '' : 'table-warning' }}">
+            <td>{{ msg.name }}<br><small>{{ msg.email }}</small></td>
+            <td>{{ msg.subject }}<br><small>{{ msg.message|truncate(60) }}</small></td>
+            <td>{{ msg.isRead ? 'Evet' : 'Hayır' }}</td>
+            <td>{{ msg.createdAt|date('d.m.Y') }}</td>
+            <td>
+                {% if not msg.isRead %}
+                <form method="post" action="{{ path('admin_contact_read', {id: msg.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('read' ~ msg.id) }}">
+                    <button class="btn btn-sm btn-primary">Okundu</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table></div></div>
+{% endblock %}

@@ -1,0 +1,27 @@
+<header class="navbar navbar-expand-md d-print-none border-bottom">
+    <div class="container-xl">
+        <div class="d-flex w-100 justify-content-between align-items-center gap-2">
+            <a href="{{ path('front_home') }}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Siteyi Gor
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <form method="post" action="{{ path('admin_settings_cache_clear') }}" class="d-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('cache_clear') }}">
+                    <button type="submit" class="btn btn-warning btn-sm" data-confirm-message="Önbellek temizlensin ve sistem bakımı çalıştırılsın mı?">
+                        <i class="fa-solid fa-broom me-1"></i> Bakım / Önbellek
+                    </button>
+                </form>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-circle-user me-1"></i>{{ app.user.username|default('Admin') }}
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item" href="{{ path('admin_user_profile') }}">Profil</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="{{ path('admin_logout') }}">Cikis</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

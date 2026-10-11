@@ -1,0 +1,20 @@
+{% extends 'front/layout/base.html.twig' %}
+{% import 'front/macros/post.html.twig' as ui %}
+{% import 'front/macros/layout.html.twig' as layout %}
+{% block body %}
+{{ layout.archive_header('snippet', 'Arama', 'İçeriklerde anahtar kelime ara.') }}
+<form method="get" action="{{ path('front_search') }}" class="search-form">
+    <input type="search" name="q" value="{{ q }}" class="search-input" placeholder="grep -r &quot;anahtar kelime&quot; ." autofocus>
+    <button type="submit" class="btn btn--primary">Ara</button>
+</form>
+{% if q %}
+    {% if results|length %}
+        <p class="text-xs font-mono text-text-faint mb-4">{{ results|length }} sonuç bulundu · query: "{{ q }}"</p>
+        <div class="feed-list">
+        {% for post in results %}{{ ui.content_card(post) }}{% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state"><p>"{{ q }}" için sonuç bulunamadı.</p></div>
+    {% endif %}
+{% endif %}
+{% endblock %}

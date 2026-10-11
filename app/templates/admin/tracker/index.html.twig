@@ -1,0 +1,153 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Takip Paneli{% endblock %}
+{% block page_subtitle %}Anasayfadaki hacker temalı takip panelinin logları ve mesaj şablonları{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_settings_index', {tab: 'tracker'}) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-gear me-1"></i>Panel Ayarları
+    </a>
+    <button type="button" id="tracker-clear-all" class="btn btn-outline-danger btn-sm"
+            data-url="{{ path('admin_tracker_log_clear_all') }}"
+            data-token="{{ csrf_token('tracker_log_clear_all') }}"
+            data-confirm-message="Tüm loglar silinsin mi? Bu işlem geri alınamaz.">
+        <i class="bi bi-trash3 me-1"></i>Tümünü Temizle
+    </button>
+{% endblock %}
+{% block body %}
+
+<div class="card mb-3">
+    <div class="card-header">Mesaj Şablonları</div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Kullanılabilir yer tutucular: <code>{ip}</code> (maskeli IP), <code>{name}</code> (rastgele üretilen isim), <code>{post}</code> (sayfa/içerik başlığı).
+            Ziyaretçilerin gerçek kimliği hiçbir zaman kullanılmaz.
+        </p>
+        {% for type, label in editableEventTypes %}
+            <h3 class="h6 mt-4">{{ label }}</h3>
+            <div class="table-responsive mb-2">
+                <table class="table table-sm align-middle">
+                    <tbody>
+                    {% for message in messagesByType[type]|default([]) %}
+                        <tr>
+                            <td class="{{ message.isActive ? '' : 'text-muted' }}">{{ message.template }}</td>
+                            <td class="text-end" style="width: 160px;">
+                                <form method="post" action="{{ path('admin_tracker_message_toggle', {id: message.id}) }}" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('tracker_message_toggle_' ~ message.id) }}">
+                                    <button class="btn btn-sm {{ message.isActive ? 'btn-outline-secondary' : 'btn-outline-success' }}">
+                                        {{ message.isActive ? 'Pasifleştir' : 'Aktifleştir' }}
+                                    </button>
+                                </form>
+                                <form method="post" action="{{ path('admin_tracker_message_delete', {id: message.id}) }}" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('tracker_message_delete_' ~ message.id) }}">
+                                    <button class="btn btn-sm btn-outline-danger" data-confirm-message="Bu şablon silinsin mi?">Sil</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td class="text-muted">Bu türde şablon yok, varsayılan mesaj kullanılır.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <form method="post" action="{{ path('admin_tracker_message_create') }}" class="row g-2 align-items-end mb-2">
+                <input type="hidden" name="_token" value="{{ csrf_token('tracker_message') }}">
+                <input type="hidden" name="event_type" value="{{ type }}">
+                <div class="col-md-10">
+                    <input type="text" name="template" class="form-control form-control-sm" placeholder="[{ip}] {name} [{post}] okudu ve yorum yazdı: incelemem lazım :)" required>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-sm btn-primary w-100">Ekle</button>
+                </div>
+            </form>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Son Kayıtlar</div>
+    <div class="table-responsive"><table class="table card-table">
+        <thead><tr><th></th><th>Mesaj</th><th>Tür</th><th>IP (ham)</th><th>Sayfa</th><th>Süre</th><th>Tarih</th><th></th></tr></thead>
+        <tbody id="tracker-log-tbody">
+        {% for log in pagination %}
+            <tr class="{{ log.eventType == 'alert' ? 'table-danger' : '' }}" data-log-row="{{ log.id }}" style="{{ log.isRead ? 'opacity:.5' : '' }}">
+                <td>
+                    <button type="button" class="btn btn-icon btn-sm tracker-toggle-read"
+                            data-url="{{ path('admin_tracker_log_toggle_read', {id: log.id}) }}"
+                            data-token="{{ csrf_token('tracker_log_toggle_read_' ~ log.id) }}"
+                            title="{{ log.isRead ? 'Okunmadı yap' : 'Okundu yap' }}">
+                        <i class="bi {{ log.isRead ? 'bi-eye-slash' : 'bi-eye' }}"></i>
+                    </button>
+                </td>
+                <td>{{ log.message }}</td>
+                <td><span class="badge {{ log.eventType == 'alert' ? 'bg-danger' : 'bg-secondary-lt' }}">{{ eventTypes[log.eventType]|default(log.eventType) }}</span></td>
+                <td class="font-monospace small">{{ log.ipAddress }}</td>
+                <td class="small">{{ log.pageUrl }}</td>
+                <td class="small">{{ log.durationSeconds ? log.durationSeconds ~ 's' : '-' }}</td>
+                <td>{{ log.createdAt|date('d.m.Y H:i') }}</td>
+                <td>
+                    <button type="button" class="btn btn-icon btn-sm text-danger tracker-delete-log"
+                            data-url="{{ path('admin_tracker_log_delete', {id: log.id}) }}"
+                            data-token="{{ csrf_token('tracker_log_delete_' ~ log.id) }}"
+                            title="Sil">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="8" class="text-muted">Henüz kayıt yok.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+    <div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div>
+</div>
+
+<script>
+(function () {
+    function postForm(url, token, extra) {
+        const body = new URLSearchParams({ _token: token, ...extra });
+        return fetch(url, { method: 'POST', body, headers: { 'Accept': 'application/json' } }).then((r) => r.json());
+    }
+
+    document.querySelectorAll('.tracker-toggle-read').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            postForm(btn.dataset.url, btn.dataset.token).then((res) => {
+                if (!res.ok) return;
+                const row = btn.closest('tr');
+                const icon = btn.querySelector('i');
+                if (res.isRead) {
+                    row.style.opacity = '.5';
+                    icon.classList.replace('bi-eye', 'bi-eye-slash');
+                    btn.title = 'Okunmadı yap';
+                } else {
+                    row.style.opacity = '';
+                    icon.classList.replace('bi-eye-slash', 'bi-eye');
+                    btn.title = 'Okundu yap';
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.tracker-delete-log').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            if (!confirm('Bu kayıt silinsin mi?')) return;
+            fetch(btn.dataset.url, {
+                method: 'DELETE',
+                body: new URLSearchParams({ _token: btn.dataset.token }),
+                headers: { 'Accept': 'application/json' },
+            }).then((r) => r.json()).then((res) => {
+                if (res.ok) btn.closest('tr').remove();
+            });
+        });
+    });
+
+    const clearAllBtn = document.getElementById('tracker-clear-all');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+            if (!confirm(clearAllBtn.dataset.confirmMessage)) return;
+            postForm(clearAllBtn.dataset.url, clearAllBtn.dataset.token, { mode: 'delete' }).then((res) => {
+                if (res.ok) document.getElementById('tracker-log-tbody').innerHTML = '<tr><td colspan="8" class="text-muted">Henüz kayıt yok.</td></tr>';
+            });
+        });
+    }
+})();
+</script>
+{% endblock %}

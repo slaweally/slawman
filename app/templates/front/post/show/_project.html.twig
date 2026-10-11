@@ -1,0 +1,77 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{% set repo = post_meta(post, 'repo_url') %}
+{% set demo = post_meta(post, 'demo_url') %}
+{% set stack = post_meta(post, 'tech_stack')|tech_stack_list %}
+
+{{ layout.breadcrumb([
+    {url: path('front_projects'), label: 'Projeler'},
+    {label: post.title}
+]) }}
+
+{{ layout.type_strip('project') }}
+
+<div class="detail-panel detail-panel--project">
+    <div class="project-hero">
+        {% if post.featuredImage %}
+            <figure class="project-hero__media">
+                {% set heroImg = responsive_image(post.featuredImage) %}
+                <picture>
+                    {% if heroImg.webp_srcset %}<source type="image/webp" srcset="{{ heroImg.webp_srcset }}" sizes="{{ heroImg.sizes }}">{% endif %}
+                    <img src="{{ post.featuredImage }}" alt="{{ post.title }}" loading="eager" fetchpriority="high">
+                </picture>
+            </figure>
+        {% endif %}
+        <aside class="project-hero__spec">
+            <h1 class="project-hero__title">{{ post.title }}</h1>
+            {% include 'front/post/show/_meta.html.twig' %}
+            {% if post.excerpt %}
+                <p class="project-hero__desc">{{ post.excerpt }}</p>
+            {% endif %}
+            {% if stack|length %}
+                <div class="spec-block">
+                    <span class="spec-block__label font-mono">stack[]</span>
+                    <div class="tech-stack-bar">
+                        {% for tech in stack %}
+                            <span class="badge-tech">{{ tech }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            {% if repo or demo %}
+                <div class="action-group">
+                    {% if repo %}
+                        <a href="{{ repo }}" class="btn btn--primary" target="_blank" rel="noopener noreferrer">
+                            <i class="bi bi-github"></i> Kaynak Kod
+                        </a>
+                    {% endif %}
+                    {% if demo %}
+                        <a href="{{ demo }}" class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+                            <i class="bi bi-box-arrow-up-right"></i> Canlı Demo
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </aside>
+    </div>
+
+    <section class="detail-section">
+        {{ layout.panel_head('Proje Detayı', 'file-earmark-richtext') }}
+        <div class="detail-body article-prose">{{ post.content|raw }}</div>
+    </section>
+
+    {% if post_meta(post, 'gallery') %}
+        <section class="detail-section">
+            {{ layout.panel_head('Ekran Görüntüleri', 'images') }}
+            <div class="gallery-grid">
+                {% for galleryUrl in post_meta(post, 'gallery')|split('\n') %}
+                    {% if galleryUrl|trim %}
+                        <figure class="gallery-grid__item">
+                            <img src="{{ galleryUrl|trim }}" alt="{{ post.title }}" loading="lazy">
+                        </figure>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+</div>

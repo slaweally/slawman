@@ -1,0 +1,38 @@
+{% if setting_enabled('footer_stats_enabled') %}
+{% set stats = get_site_public_stats() %}
+<div class="site-stats-widget" tabindex="0">
+    <div class="site-stats-widget__trigger font-mono">
+        <i class="bi bi-activity"></i>
+        <span>stats</span>
+    </div>
+    <div class="site-stats-widget__panel">
+        <div class="site-stats-widget__head font-mono">site.metrics</div>
+        <div class="site-stats-widget__grid">
+            <div class="site-stats-widget__item">
+                <strong>{{ stats.today_visitors }}</strong>
+                <span>bugün ziyaretçi</span>
+            </div>
+            <div class="site-stats-widget__item">
+                <strong>{{ stats.today_views }}</strong>
+                <span>bugün görüntülenme</span>
+            </div>
+            <div class="site-stats-widget__item">
+                <strong>{{ stats.total_visitors }}</strong>
+                <span>toplam ziyaretçi</span>
+            </div>
+            <div class="site-stats-widget__item">
+                <strong>{{ stats.total_views }}</strong>
+                <span>toplam görüntülenme</span>
+            </div>
+            <div class="site-stats-widget__item">
+                <strong>{{ stats.posts }}</strong>
+                <span>içerik</span>
+            </div>
+            <div class="site-stats-widget__item">
+                <strong>{{ stats.comments }}</strong>
+                <span>yorum</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

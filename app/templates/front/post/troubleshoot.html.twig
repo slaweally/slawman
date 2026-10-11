@@ -1,0 +1,11 @@
+{% extends 'front/layout/base.html.twig' %}
+{% import 'front/macros/post.html.twig' as ui %}
+{% import 'front/macros/layout.html.twig' as layout %}
+{% block body %}
+{{ layout.archive_header('troubleshoot', title, 'Karşılaşılan hatalar ve çözüm adımları.') }}
+<div class="feed-list">
+{% for post in pagination %}{{ ui.troubleshoot_card(post) }}
+{% else %}<div class="empty-state"><p>Bu bölümde henüz içerik yok.</p></div>{% endfor %}
+</div>
+{{ knp_pagination_render(pagination) }}
+{% endblock %}

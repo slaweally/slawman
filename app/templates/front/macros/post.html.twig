@@ -1,0 +1,300 @@
+{% macro compact_tile(post) %}
+{% set url = post_path(post) %}
+<a href="{{ url }}" class="compact-tile compact-tile--{{ post.type.value }}">
+    <div class="compact-tile__icon">
+        {% if post.type.value == 'project' %}<i class="bi bi-box-seam"></i>{% else %}<i class="bi bi-cpu"></i>{% endif %}
+    </div>
+    <div class="compact-tile__body">
+        <span class="compact-tile__type font-mono">{{ post.type.value == 'software' ? 'pkg' : 'proj' }}</span>
+        <h3 class="compact-tile__title">{{ post.title|default(post.slug) }}</h3>
+        <p class="compact-tile__meta font-mono">
+            {% if post.type.value == 'software' %}
+                {% if post_meta(post, 'version') %}v{{ post_meta(post, 'version') }}{% endif %}
+                {% if post_meta(post, 'distribution') %}
+                    {% if post_meta(post, 'version') %} · {% endif %}
+                    <span class="software-distribution software-distribution--{{ post_meta(post, 'distribution') }}">{{ software_distribution_label(post_meta(post, 'distribution')) }}</span>
+                {% endif %}
+            {% endif %}
+            {% if post.type.value == 'project' and post_meta(post, 'tech_stack') %}
+                {{ post_meta(post, 'tech_stack')|tech_stack_list|slice(0, 2)|join(' · ') }}
+            {% endif %}
+        </p>
+    </div>
+    <span class="compact-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+</a>
+{% endmacro %}
+
+{% macro home_showcase(post, reverse) %}
+{% set url = post_path(post) %}
+<article class="showcase-row showcase-row--{{ post.type.value }}{{ reverse ? ' showcase-row--reverse' : '' }}">
+    <a href="{{ url }}" class="showcase-row__media" tabindex="-1" aria-hidden="true">
+        {% if post.featuredImage %}
+            {% set img = responsive_image(post.featuredImage) %}
+            <picture>
+                {% if img.webp_srcset %}<source type="image/webp" srcset="{{ img.webp_srcset }}" sizes="{{ img.sizes }}">{% endif %}
+                <img src="{{ post.featuredImage }}" alt="{{ post.title|default('') }}" {{ lazy_attr() }}>
+            </picture>
+        {% else %}
+            <div class="showcase-row__placeholder">
+                {% if post.type.value == 'project' %}<i class="bi bi-box-seam"></i>
+                {% elseif post.type.value == 'software' %}<i class="bi bi-cpu"></i>
+                {% elseif post.type.value == 'snippet' %}<i class="bi bi-braces"></i>
+                {% elseif post.type.value == 'note' %}<i class="bi bi-terminal"></i>
+                {% elseif post.type.value == 'howto' %}<i class="bi bi-signpost-split"></i>
+                {% elseif post.type.value == 'troubleshoot' %}<i class="bi bi-bug"></i>
+                {% elseif post.type.value == 'comparison' %}<i class="bi bi-columns-gap"></i>
+                {% else %}<i class="bi bi-journal-code"></i>
+                {% endif %}
+            </div>
+        {% endif %}
+    </a>
+    <div class="showcase-row__body">
+        <div class="showcase-row__head">
+            <span class="type-badge type-badge--{{ post.type.value }} type-badge--sm">{{ get_post_type_label(post.type.value) }}</span>
+            <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|time_ago }}</time>
+        </div>
+        <h2 class="showcase-row__title">
+            <a href="{{ url }}">{{ post.title|default(post.content|striptags|truncate(80)) }}</a>
+        </h2>
+        {% if post.type.value == 'note' %}
+            <p class="showcase-row__excerpt font-mono">{{ post.content|striptags|truncate(200) }}</p>
+        {% else %}
+            <p class="showcase-row__excerpt">{{ post.excerpt|default(post.content|striptags|truncate(160)) }}</p>
+        {% endif %}
+        <div class="showcase-row__meta">
+            {% if post.type.value == 'article' %}
+                <span><i class="bi bi-clock"></i> {{ post.content|reading_time }}</span>
+            {% elseif post.type.value == 'software' %}
+                {% if post_meta(post, 'version') %}
+                    <span class="font-mono">v{{ post_meta(post, 'version') }}</span>
+                {% endif %}
+                {% if post_meta(post, 'distribution') %}
+                    <span class="software-distribution software-distribution--{{ post_meta(post, 'distribution') }}">{{ software_distribution_label(post_meta(post, 'distribution')) }}</span>
+                {% endif %}
+            {% elseif post.type.value == 'howto' and post_meta(post, 'estimated_time') %}
+                <span><i class="bi bi-clock"></i> {{ post_meta(post, 'estimated_time') }}</span>
+            {% elseif post.type.value == 'troubleshoot' and post_meta(post, 'error_content') %}
+                <span class="font-mono">{{ post_meta(post, 'error_content')|truncate(60) }}</span>
+            {% elseif post.type.value == 'comparison' and post_meta(post, 'compare_side_a') and post_meta(post, 'compare_side_b') %}
+                <span class="font-mono">{{ post_meta(post, 'compare_side_a') }} vs {{ post_meta(post, 'compare_side_b') }}</span>
+            {% endif %}
+            {% if post.type.value == 'project' and post_meta(post, 'tech_stack') %}
+                {% for tech in post_meta(post, 'tech_stack')|tech_stack_list|slice(0, 4) %}
+                    <span class="badge-tech">{{ tech }}</span>
+                {% endfor %}
+            {% endif %}
+            {% if post_meta(post, 'license') and post.type.value == 'software' %}
+                <span><i class="bi bi-shield-check"></i> {{ post_meta(post, 'license') }}</span>
+            {% endif %}
+        </div>
+        <a href="{{ url }}" class="showcase-row__link font-mono">cat {{ post.slug }} →</a>
+    </div>
+</article>
+{% endmacro %}
+
+{% macro article_card(post) %}
+<article class="feed-card feed-card--article{{ post.featuredImage ? ' has-thumb' : '' }}">
+    {% if post.featuredImage %}
+    <div class="feed-card__thumb-row">
+        <a href="{{ post_path(post) }}" class="feed-card__thumb" tabindex="-1" aria-hidden="true">
+            {% set img = responsive_image(post.featuredImage) %}
+            <picture>
+                {% if img.webp_srcset %}<source type="image/webp" srcset="{{ img.webp_srcset }}" sizes="{{ img.sizes }}">{% endif %}
+                <img src="{{ post.featuredImage }}" alt="{{ post.title|default('') }}" {{ lazy_attr() }}>
+            </picture>
+        </a>
+        <div class="feed-card__inner">
+    {% endif %}
+    <div class="feed-card__head">
+        <span class="feed-card__type font-mono">article</span>
+        <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|time_ago }}</time>
+    </div>
+    <h2 class="feed-card__title">
+        <a href="{{ post_path(post) }}">{{ post.title }}</a>
+    </h2>
+    <div class="feed-card__meta">
+        <span><i class="bi bi-clock"></i> {{ post.content|reading_time }}</span>
+        {% for cat in post.categories|slice(0, 2) %}
+            <a href="{{ category_path(cat) }}" class="tag-pill tag-pill--sm">{{ cat.name }}</a>
+        {% endfor %}
+    </div>
+    {% if post.excerpt or post.content %}
+        <p class="feed-card__excerpt">{{ post.excerpt|default(post.content|striptags|truncate(180)) }}</p>
+    {% endif %}
+    <a href="{{ post_path(post) }}" class="feed-card__link font-mono">devamını oku →</a>
+    {% if post.featuredImage %}
+        </div>
+    </div>
+    {% endif %}
+</article>
+{% endmacro %}
+
+{% macro note_card(post) %}
+<article class="feed-card feed-card--note">
+    <div class="feed-card__head">
+        <span class="feed-card__type font-mono"><i class="bi bi-terminal"></i> note</span>
+        <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|time_ago }}</time>
+    </div>
+    <p class="feed-card__note">{{ post.content|striptags }}</p>
+    <a href="{{ post_path(post) }}" class="feed-card__link font-mono">#{{ post.slug }}</a>
+</article>
+{% endmacro %}
+
+{% macro project_card(post) %}
+<article class="feed-card feed-card--project">
+    <a href="{{ post_path(post) }}" class="feed-card__media">
+        {% if post.featuredImage %}
+            {% set img = responsive_image(post.featuredImage) %}
+            <picture>
+                {% if img.webp_srcset %}<source type="image/webp" srcset="{{ img.webp_srcset }}" sizes="{{ img.sizes }}">{% endif %}
+                <img src="{{ post.featuredImage }}" alt="{{ post.title|default('') }}" {{ lazy_attr() }}>
+            </picture>
+        {% else %}
+            <span class="feed-card__media-ph"><i class="bi bi-box-seam"></i></span>
+        {% endif %}
+    </a>
+    <div class="feed-card__body">
+        <span class="feed-card__type font-mono">project</span>
+        <h2 class="feed-card__title">
+            <a href="{{ post_path(post) }}">{{ post.title }}</a>
+        </h2>
+        <p class="feed-card__excerpt">{{ post.excerpt|default(post.content|striptags|truncate(100)) }}</p>
+        {% if post_meta(post, 'tech_stack') %}
+            <div class="tech-stack-bar tech-stack-bar--compact">
+                {% for tech in post_meta(post, 'tech_stack')|tech_stack_list|slice(0, 5) %}
+                    <span class="badge-tech">{{ tech }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</article>
+{% endmacro %}
+
+{% macro software_card(post) %}
+<article class="feed-card feed-card--software">
+    <div class="feed-card__icon"><i class="bi bi-cpu"></i></div>
+    <div class="feed-card__body">
+        <div class="feed-card__head">
+            <span class="feed-card__type font-mono">package</span>
+            <span class="feed-card__badges">
+                {% if post_meta(post, 'version') %}
+                    <span class="feed-card__version font-mono">v{{ post_meta(post, 'version') }}</span>
+                {% endif %}
+                {% if post_meta(post, 'distribution') %}
+                    <span class="feed-card__distribution feed-card__distribution--{{ post_meta(post, 'distribution') }}">{{ software_distribution_label(post_meta(post, 'distribution')) }}</span>
+                {% endif %}
+            </span>
+        </div>
+        <h2 class="feed-card__title">
+            <a href="{{ post_path(post) }}">{{ post.title }}</a>
+        </h2>
+        <p class="feed-card__excerpt">{{ post.excerpt|default(post.content|striptags|truncate(90)) }}</p>
+        <div class="feed-card__meta">
+            {% if post_meta(post, 'license') %}<span><i class="bi bi-shield-check"></i> {{ post_meta(post, 'license') }}</span>{% endif %}
+            {% if post_meta(post, 'download_url') %}<span><i class="bi bi-download"></i> indirilebilir</span>{% endif %}
+        </div>
+    </div>
+</article>
+{% endmacro %}
+
+{% macro snippet_card(post) %}
+<article class="feed-card feed-card--snippet">
+    <div class="feed-card__head">
+        <span class="feed-card__type font-mono">{{ post.programmingLanguage|default('code')|upper }}</span>
+        <a href="{{ post_path(post) }}" class="feed-card__link font-mono">aç →</a>
+    </div>
+    <h2 class="feed-card__title feed-card__title--sm">
+        <a href="{{ post_path(post) }}">{{ post.title }}</a>
+    </h2>
+    <pre class="feed-card__code font-mono"><code>{{ post.content|striptags|truncate(140) }}</code></pre>
+</article>
+{% endmacro %}
+
+{% macro howto_card(post) %}
+<article class="feed-card feed-card--howto{{ post.featuredImage ? ' has-thumb' : '' }}">
+    <div class="feed-card__head">
+        <span class="feed-card__type font-mono"><i class="bi bi-signpost-split"></i> howto</span>
+        <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|time_ago }}</time>
+    </div>
+    <h2 class="feed-card__title">
+        <a href="{{ post_path(post) }}">{{ post.title }}</a>
+    </h2>
+    <div class="feed-card__meta">
+        {% if post_meta(post, 'difficulty') %}
+            <span class="howto-badge howto-badge--{{ post_meta(post, 'difficulty') }} howto-badge--sm">
+                {{ howto_difficulty_label(post_meta(post, 'difficulty')) }}
+            </span>
+        {% endif %}
+        {% if post_meta(post, 'estimated_time') %}
+            <span><i class="bi bi-clock"></i> {{ post_meta(post, 'estimated_time') }}</span>
+        {% endif %}
+    </div>
+    {% if post.excerpt or post.content %}
+        <p class="feed-card__excerpt">{{ post.excerpt|default(post.content|striptags|truncate(160)) }}</p>
+    {% endif %}
+    <a href="{{ post_path(post) }}" class="feed-card__link font-mono">rehberi aç →</a>
+</article>
+{% endmacro %}
+
+{% macro troubleshoot_card(post) %}
+<article class="feed-card feed-card--troubleshoot">
+    <div class="feed-card__head">
+        <span class="feed-card__type font-mono"><i class="bi bi-bug"></i> fix</span>
+        <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|time_ago }}</time>
+    </div>
+    <h2 class="feed-card__title">
+        <a href="{{ post_path(post) }}">{{ post.title }}</a>
+    </h2>
+    {% if post_meta(post, 'error_content') %}
+        <pre class="feed-card__code feed-card__code--error font-mono"><code>{{ post_meta(post, 'error_content')|truncate(120) }}</code></pre>
+    {% endif %}
+    <p class="feed-card__excerpt">{{ post.excerpt|default('Çözüm adımları için tıklayın.') }}</p>
+    <a href="{{ post_path(post) }}" class="feed-card__link font-mono">çözümü gör →</a>
+</article>
+{% endmacro %}
+
+{% macro comparison_card(post) %}
+{% set sideA = post_meta(post, 'compare_side_a') %}
+{% set sideB = post_meta(post, 'compare_side_b') %}
+<article class="feed-card feed-card--comparison{{ post.featuredImage ? ' has-thumb' : '' }}">
+    <div class="feed-card__head">
+        <span class="feed-card__type font-mono"><i class="bi bi-columns-gap"></i> vs</span>
+        <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|time_ago }}</time>
+    </div>
+    {% if sideA and sideB %}
+        <div class="compare-card-duel font-mono">
+            <span class="compare-card-duel__a">{{ sideA }}</span>
+            <span class="compare-card-duel__vs">vs</span>
+            <span class="compare-card-duel__b">{{ sideB }}</span>
+        </div>
+    {% endif %}
+    <h2 class="feed-card__title">
+        <a href="{{ post_path(post) }}">{{ post.title }}</a>
+    </h2>
+    <div class="feed-card__meta">
+        {% set winner = post_meta(post, 'compare_winner', 'none') %}
+        {% if winner != 'none' %}
+            <span><i class="bi bi-trophy"></i> {{ compare_winner_label(winner) }}</span>
+        {% endif %}
+        {% if post_meta(post, 'compare_criteria')|compare_criteria_list|length %}
+            <span><i class="bi bi-table"></i> {{ post_meta(post, 'compare_criteria')|compare_criteria_list|length }} kriter</span>
+        {% endif %}
+    </div>
+    {% if post.excerpt or post_meta(post, 'compare_verdict') %}
+        <p class="feed-card__excerpt">{{ post.excerpt|default(post_meta(post, 'compare_verdict')|truncate(160)) }}</p>
+    {% endif %}
+    <a href="{{ post_path(post) }}" class="feed-card__link font-mono">karşılaştır →</a>
+</article>
+{% endmacro %}
+
+{% macro content_card(post) %}
+    {% if post.type.value == 'note' %}{{ _self.note_card(post) }}
+    {% elseif post.type.value == 'project' %}{{ _self.project_card(post) }}
+    {% elseif post.type.value == 'software' %}{{ _self.software_card(post) }}
+    {% elseif post.type.value == 'snippet' %}{{ _self.snippet_card(post) }}
+    {% elseif post.type.value == 'howto' %}{{ _self.howto_card(post) }}
+    {% elseif post.type.value == 'troubleshoot' %}{{ _self.troubleshoot_card(post) }}
+    {% elseif post.type.value == 'comparison' %}{{ _self.comparison_card(post) }}
+    {% else %}{{ _self.article_card(post) }}
+    {% endif %}
+{% endmacro %}

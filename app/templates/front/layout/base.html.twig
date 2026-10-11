@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% set __seo = seoMeta|default(null) %}
+    <title>{{ __seo.document_title|default(__seo.title|default(get_setting('site_title', 'Slaweally'))) }}</title>
+    <meta name="description" content="{{ __seo.description|default(get_setting('site_description', '')) }}">
+    {% block robots_meta %}<meta name="robots" content="{{ __seo.robots|default(get_setting('seo_default_robots', 'index,follow')) }}">{% endblock %}
+    {% if __seo and __seo.keywords|default('') %}
+        <meta name="keywords" content="{{ __seo.keywords }}">
+    {% endif %}
+    {% if get_setting('seo_google_site_verification') %}
+        <meta name="google-site-verification" content="{{ get_setting('seo_google_site_verification') }}">
+    {% endif %}
+    {% if get_setting('seo_bing_site_verification') %}
+        <meta name="msvalidate.01" content="{{ get_setting('seo_bing_site_verification') }}">
+    {% endif %}
+    {% if get_setting('seo_yandex_site_verification') %}
+        <meta name="yandex-verification" content="{{ get_setting('seo_yandex_site_verification') }}">
+    {% endif %}
+    {% if __seo and __seo.canonical|default('') %}
+        <link rel="canonical" href="{{ __seo.canonical }}">
+        <meta property="og:url" content="{{ __seo.canonical }}">
+    {% endif %}
+    {% block head_meta %}{% endblock %}
+    <meta property="og:type" content="{{ __seo.og_type|default('website') }}">
+    <meta property="og:site_name" content="{{ __seo.site_name|default(get_setting('site_title', 'Slaweally')) }}">
+    <meta property="og:title" content="{{ __seo.og_title|default(get_setting('site_title', 'Slaweally')) }}">
+    <meta property="og:description" content="{{ __seo.og_description|default(get_setting('site_description', '')) }}">
+    {% if __seo and __seo.og_image|default('') %}
+        <meta property="og:image" content="{{ __seo.og_image }}">
+        {% if __seo.og_image_width|default('') %}
+            <meta property="og:image:width" content="{{ __seo.og_image_width }}">
+            <meta property="og:image:height" content="{{ __seo.og_image_height }}">
+        {% endif %}
+    {% endif %}
+    {% if __seo and __seo.og_type|default('') == 'article' %}
+        {% if __seo.article_published_time|default('') %}
+            <meta property="article:published_time" content="{{ __seo.article_published_time }}">
+        {% endif %}
+        {% if __seo.article_modified_time|default('') %}
+            <meta property="article:modified_time" content="{{ __seo.article_modified_time }}">
+        {% endif %}
+        {% if __seo.article_author|default('') %}
+            <meta property="article:author" content="{{ __seo.article_author }}">
+        {% endif %}
+    {% endif %}
+    <meta name="twitter:card" content="{{ __seo.twitter_card|default('summary') }}">
+    <meta name="twitter:title" content="{{ __seo.twitter_title|default(__seo.og_title|default(get_setting('site_title', 'Slaweally'))) }}">
+    <meta name="twitter:description" content="{{ __seo.twitter_description|default(__seo.og_description|default(get_setting('site_description', ''))) }}">
+    {% if __seo and __seo.og_image|default('') %}
+        <meta name="twitter:image" content="{{ __seo.og_image }}">
+    {% endif %}
+    {% if __seo and __seo.json_ld|default('') %}
+        <script type="application/ld+json">{{ __seo.json_ld|raw }}</script>
+    {% endif %}
+    {% set siteFavicon = get_setting('site_favicon') %}
+    {% if siteFavicon %}
+        <link rel="icon" href="{{ siteFavicon }}">
+        <link rel="apple-touch-icon" href="{{ siteFavicon }}">
+    {% else %}
+        <link rel="icon" href="{{ path('front_favicon') }}">
+    {% endif %}
+    <link rel="manifest" href="{{ path('front_manifest') }}">
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="{{ path('front_feed') }}">
+    {% block stylesheets %}{{ encore_entry_link_tags('app') }}{% endblock %}
+    {% if setting_enabled('metrika_enabled') and get_setting('metrika_counter_id') %}
+        {% include 'front/partials/yandex-metrika.html.twig' %}
+    {% endif %}
+    {% set customHeadCode = get_setting('custom_head_code') %}
+    {% if customHeadCode %}{{ customHeadCode|raw }}{% endif %}
+</head>
+<body>
+<div class="site-shell">
+    <a href="#main-content" class="skip-link">İçeriğe atla</a>
+
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a href="{{ path('front_home') }}" class="site-logo">
+                {% if get_setting('site_logo') %}
+                    <img src="{{ get_setting('site_logo') }}" alt="{{ get_setting('site_title', 'Slaweally') }}" class="site-logo__img">
+                {% else %}
+                    <span class="prompt">~$</span>
+                    <span>{{ site_owner() ? site_owner().displayName : get_setting('site_title', 'Slaweally') }}</span>
+                {% endif %}
+            </a>
+
+            <button type="button"
+                    class="mobile-nav-toggle md:hidden"
+                    id="mobile-nav-toggle"
+                    aria-expanded="false"
+                    aria-controls="site-nav">
+                <i class="bi bi-list" aria-hidden="true"></i>
+                <span class="sr-only">Menü</span>
+            </button>
+
+            <nav id="site-nav"
+                 class="site-nav"
+                 aria-label="Ana menü">
+                {% set route = app.request.attributes.get('_route') %}
+                {% set headerMenu = get_menu_items('header') %}
+                {% if headerMenu|length %}
+                    {% for item in headerMenu %}
+                        {% set activeChildren = item.children|filter(c => c.isActive) %}
+                        {% if activeChildren|length %}
+                            <div class="site-nav__dropdown">
+                                <button type="button" class="site-nav__dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                                    {% if item.icon %}<i class="{{ item.icon }}"></i>{% endif %}
+                                    {{ item.label }}
+                                    <i class="bi bi-chevron-down site-nav__dropdown-caret"></i>
+                                </button>
+                                <div class="site-nav__dropdown-menu">
+                                    {% for child in activeChildren %}
+                                        <a href="{{ child.url }}" {% if child.openInNewTab %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                                            {% if child.icon %}<i class="{{ child.icon }}"></i>{% endif %} {{ child.label }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <a href="{{ item.url }}"
+                               {% if item.openInNewTab %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                                {% if item.icon %}<i class="{{ item.icon }}"></i>{% endif %}
+                                {{ item.label }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <a href="{{ path('front_blog') }}" class="{{ route starts with 'front_blog' ? 'is-active' : '' }}"><i class="bi bi-journal-code"></i> Blog</a>
+                    <a href="{{ path('front_notes') }}" class="{{ route == 'front_notes' ? 'is-active' : '' }}"><i class="bi bi-lightning"></i> Notlar</a>
+                    <a href="{{ path('front_projects') }}" class="{{ route == 'front_projects' ? 'is-active' : '' }}"><i class="bi bi-box-seam"></i> Projeler</a>
+                    <a href="{{ path('front_software') }}" class="{{ route == 'front_software' ? 'is-active' : '' }}"><i class="bi bi-cpu"></i> Yazılım</a>
+                    <a href="{{ path('front_snippets') }}" class="{{ route == 'front_snippets' ? 'is-active' : '' }}"><i class="bi bi-braces"></i> Snippetler</a>
+                    <a href="{{ path('front_contact') }}" class="{{ route == 'front_contact' ? 'is-active' : '' }}"><i class="bi bi-envelope"></i> İletişim</a>
+                {% endif %}
+                {% if setting_enabled('widget_profile_enabled') %}
+                <div class="mobile-nav-profile md:hidden">
+                    {% include 'front/partials/sidebar-profile.html.twig' %}
+                </div>
+                {% endif %}
+                <form action="{{ path('front_search') }}" method="get" class="mobile-search-form md:hidden">
+                    <input type="search" name="q" value="{{ app.request.query.get('q', '') }}" placeholder="Ara…" class="search-input">
+                </form>
+            </nav>
+
+            <form action="{{ path('front_search') }}" method="get" class="header-search hidden md:flex items-center">
+                <input type="search" name="q" value="{{ app.request.query.get('q', '') }}" placeholder="Ara…" class="search-input search-input--header">
+            </form>
+        </div>
+    </header>
+
+    <main id="main-content" class="site-main">
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="flash-message flash-message--{{ label }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        {% block layout %}
+        <div class="content-grid">
+            <div class="content-primary">{% block body %}{% endblock %}</div>
+            {% block sidebar %}
+            <aside class="content-sidebar hidden lg:block">{% include 'front/partials/sidebar.html.twig' %}</aside>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </main>
+
+    {% include 'front/partials/footer-tags-bar.html.twig' %}
+
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            {% set owner = site_owner() %}
+            <span class="font-mono"><span class="text-terminal">$</span> © {{ 'now'|date('Y') }} {{ owner ? owner.displayName : get_setting('site_title', 'Slaweally') }} · uptime: ∞</span>
+            <div class="flex gap-4 flex-wrap">
+                {% set footerMenu = get_menu_items('footer') %}
+                {% if footerMenu|length %}
+                    {% for item in footerMenu %}
+                        <a href="{{ item.url starts with 'http' ? item.url : item.url }}"
+                           {% if item.openInNewTab %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                            {% if item.icon %}<i class="{{ item.icon }} me-1"></i>{% endif %}{{ item.label }}
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    {% for p in get_pages() %}
+                        <a href="{{ page_path(p) }}">{{ p.title }}</a>
+                    {% endfor %}
+                    <a href="{{ path('front_feed') }}"><i class="bi bi-rss me-1"></i>RSS</a>
+                    <a href="{{ path('front_sitemap') }}"><i class="bi bi-diagram-3 me-1"></i>Sitemap</a>
+                    {% if owner and owner.github %}<a href="{{ owner.github }}" rel="noopener noreferrer" target="_blank"><i class="fa-brands fa-github me-1"></i>GitHub</a>{% endif %}
+                    {% if owner and owner.twitter %}<a href="{{ owner.twitter }}" rel="noopener noreferrer" target="_blank"><i class="fa-brands fa-x-twitter me-1"></i>Twitter</a>{% endif %}
+                    {% if owner and owner.linkedin %}<a href="{{ owner.linkedin }}" rel="noopener noreferrer" target="_blank"><i class="fa-brands fa-linkedin me-1"></i>LinkedIn</a>{% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </footer>
+
+    {% include 'front/partials/footer-stats-widget.html.twig' %}
+
+    <button type="button" id="scroll-top" class="scroll-top" aria-label="Yukarı çık" hidden>
+        <i class="bi bi-chevron-up" aria-hidden="true"></i>
+    </button>
+</div>
+{% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
+{% set customFooterCode = get_setting('custom_footer_code') %}
+{% if customFooterCode %}{{ customFooterCode|raw }}{% endif %}
+</body>
+</html>

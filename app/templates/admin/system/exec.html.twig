@@ -1,0 +1,192 @@
+{% extends 'admin/layout/base.html.twig' %}
+
+{% block title %}Sistem Yönetimi{% endblock %}
+{% block page_subtitle %}Composer, migration ve derleme işlemlerini SSH olmadan çalıştırın{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_tools_index') }}">Araçlar</a></li>
+        <li class="breadcrumb-item active">Sistem Yönetimi</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="alert alert-warning">
+    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+    Bu sayfadaki işlemler sunucuda gerçek komutlar çalıştırır (composer, npm, migration). Yalnızca
+    <strong>Süper Admin</strong> yetkisiyle erişilebilir. Her çalıştırma audit log'a yazılır.
+</div>
+
+<div class="row g-3">
+    {% for command in commands %}
+        {% if command.value != 'migrations_migrate' %}
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>{{ command.label }}</span>
+                    <span class="text-muted small">{{ command.estimatedDuration }}</span>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <p class="text-muted small mb-3">
+                        {% if command.value == 'composer_update' %}
+                            Paket sürümleri değişebilir ve <strong>siteyi bozabilir</strong>. Önceki composer.lock
+                            otomatik olarak geri yüklenmez; işlem öncesi lock dosyası yedeklenir.
+                        {% elseif command.value == 'composer_install' %}
+                            composer.lock dosyasındaki sabit sürümlere göre bağımlılıkları kurar.
+                        {% elseif command.value == 'npm_build' %}
+                            Ön yüz asset'lerini (JS/CSS) derleyip public/build/ altına yazar.
+                        {% else %}
+                            Symfony, Redis ve Varnish önbelleğini temizler, OPcache'i sıfırlar.
+                        {% endif %}
+                    </p>
+                    <button type="button"
+                            class="btn {{ command.value == 'composer_update' ? 'btn-outline-danger' : 'btn-primary' }} mt-auto system-exec-btn"
+                            data-command="{{ command.value }}"
+                            data-confirm="{{ command.value == 'composer_update' ? 'composer update çalıştırılacak. Paket sürümleri değişebilir ve site bozulabilir. Devam edilsin mi?' : 'Bu işlem çalıştırılacak. Emin misiniz?' }}">
+                        <i class="fa-solid fa-play me-1"></i> Çalıştır
+                    </button>
+                    <div class="system-exec-result small mt-2" data-command-result="{{ command.value }}"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    <div class="col-lg-6">
+        <div class="card h-100 border-danger">
+            <div class="card-header bg-danger-lt text-danger d-flex justify-content-between align-items-center">
+                <span>Veritabanı Migration</span>
+                <span class="text-muted small">~10-60 saniye</span>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted small mb-3">
+                    Şema değişiklikleri geri alınamayabilir. Önce <strong>önizleme (dry-run)</strong> ile
+                    çalıştırılacak SQL sorgularını görün, ardından ayrı bir onayla gerçek migration'ı başlatın.
+                    Gerçek çalıştırmadan önce otomatik veritabanı yedeği alınır.
+                </p>
+                <button type="button" id="migrate-preview-btn" class="btn btn-outline-warning mb-2">
+                    <i class="fa-solid fa-eye me-1"></i> Önizle (dry-run)
+                </button>
+                <button type="button" id="migrate-run-btn" class="btn btn-danger mb-2" disabled>
+                    <i class="fa-solid fa-play me-1"></i> Gerçekten Çalıştır
+                </button>
+                <div id="migrate-result" class="small mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">Çıktı</div>
+    <div class="card-body">
+        <pre id="system-exec-output" class="mb-0" style="max-height: 400px; overflow-y: auto; white-space: pre-wrap;">Henüz bir işlem çalıştırılmadı.</pre>
+    </div>
+</div>
+
+<script>
+(function () {
+    const runToken = '{{ csrf_token('system_exec_run') }}';
+    const previewToken = '{{ csrf_token('system_migrate_preview') }}';
+    const migrateToken = '{{ csrf_token('system_migrate_run') }}';
+    const output = document.getElementById('system-exec-output');
+
+    function renderOutput(res) {
+        const status = res.ok ? 'BAŞARILI' : 'BAŞARISIZ';
+        output.textContent = `[${status}] exitCode=${res.exitCode} (${res.durationMs}ms)\n\n${res.output || res.error || ''}`;
+    }
+
+    document.querySelectorAll('.system-exec-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            if (!confirm(btn.dataset.confirm)) return;
+
+            const command = btn.dataset.command;
+            const resultEl = document.querySelector(`[data-command-result="${command}"]`);
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Çalışıyor...';
+
+            fetch('{{ path('admin_system_run') }}', {
+                method: 'POST',
+                body: new URLSearchParams({ command, _token: runToken }),
+                headers: { 'Accept': 'application/json' },
+            })
+                .then((r) => r.json())
+                .then((res) => {
+                    renderOutput(res);
+                    resultEl.innerHTML = res.ok
+                        ? '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Tamamlandı</span>'
+                        : `<span class="text-danger">${res.error || 'Başarısız'}</span>`;
+                })
+                .catch(() => {
+                    resultEl.innerHTML = '<span class="text-danger">İstek başarısız oldu.</span>';
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-play me-1"></i> Çalıştır';
+                });
+        });
+    });
+
+    const previewBtn = document.getElementById('migrate-preview-btn');
+    const runBtn = document.getElementById('migrate-run-btn');
+    const migrateResult = document.getElementById('migrate-result');
+
+    previewBtn.addEventListener('click', () => {
+        previewBtn.disabled = true;
+        previewBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Önizleniyor...';
+
+        fetch('{{ path('admin_system_migrate_preview') }}', {
+            method: 'POST',
+            body: new URLSearchParams({ _token: previewToken }),
+            headers: { 'Accept': 'application/json' },
+        })
+            .then((r) => r.json())
+            .then((res) => {
+                renderOutput(res);
+                if (res.ok) {
+                    migrateResult.innerHTML = '<span class="text-success">Önizleme tamam. Şimdi gerçekten çalıştırabilirsiniz.</span>';
+                    runBtn.disabled = false;
+                } else {
+                    migrateResult.innerHTML = `<span class="text-danger">${res.error || 'Önizleme başarısız'}</span>`;
+                }
+            })
+            .catch(() => {
+                migrateResult.innerHTML = '<span class="text-danger">İstek başarısız oldu.</span>';
+            })
+            .finally(() => {
+                previewBtn.disabled = false;
+                previewBtn.innerHTML = '<i class="fa-solid fa-eye me-1"></i> Önizle (dry-run)';
+            });
+    });
+
+    runBtn.addEventListener('click', () => {
+        if (!confirm('Migration gerçekten çalıştırılacak. Şema değişiklikleri geri alınamayabilir. Emin misiniz?')) return;
+
+        runBtn.disabled = true;
+        runBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Çalışıyor...';
+
+        fetch('{{ path('admin_system_migrate_run') }}', {
+            method: 'POST',
+            body: new URLSearchParams({ _token: migrateToken }),
+            headers: { 'Accept': 'application/json' },
+        })
+            .then((r) => r.json())
+            .then((res) => {
+                renderOutput(res);
+                migrateResult.innerHTML = res.ok
+                    ? '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Migration tamamlandı</span>'
+                    : `<span class="text-danger">${res.error || 'Migration başarısız'}</span>`;
+                runBtn.disabled = true;
+            })
+            .catch(() => {
+                migrateResult.innerHTML = '<span class="text-danger">İstek başarısız oldu.</span>';
+            })
+            .finally(() => {
+                runBtn.innerHTML = '<i class="fa-solid fa-play me-1"></i> Gerçekten Çalıştır';
+            });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'front/layout/base.html.twig' %}
+{% block body %}
+<section class="contact-page">
+    <div class="contact-page__intro">
+        <p class="contact-page__eyebrow font-mono">$ mail --compose</p>
+        <h1 class="contact-page__title">İletişim</h1>
+        <p class="contact-page__lead">Teknik sorular, iş birlikleri veya geri bildirimler için formu doldurun. Mesajınız hem panele düşer hem de e-posta ile iletilir.</p>
+    </div>
+
+    <div class="contact-page__grid">
+        <aside class="contact-page__aside">
+            <div class="contact-info-card">
+                <h2 class="contact-info-card__title font-mono">contact.info</h2>
+                {% if siteEmail %}
+                    <a href="mailto:{{ siteEmail }}" class="contact-info-card__row">
+                        <i class="bi bi-envelope"></i>
+                        <span>{{ siteEmail }}</span>
+                    </a>
+                {% endif %}
+                {% if socialGithub %}
+                    <a href="{{ socialGithub }}" class="contact-info-card__row" rel="noopener noreferrer">
+                        <i class="fa-brands fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                {% endif %}
+                {% if socialTwitter %}
+                    <a href="{{ socialTwitter }}" class="contact-info-card__row" rel="noopener noreferrer">
+                        <i class="fa-brands fa-x-twitter"></i>
+                        <span>Twitter / X</span>
+                    </a>
+                {% endif %}
+                {% if socialLinkedin %}
+                    <a href="{{ socialLinkedin }}" class="contact-info-card__row" rel="noopener noreferrer">
+                        <i class="fa-brands fa-linkedin"></i>
+                        <span>LinkedIn</span>
+                    </a>
+                {% endif %}
+            </div>
+            <div class="contact-info-card contact-info-card--muted">
+                <p class="text-sm text-text-muted m-0">Form gönderimleri Turnstile ile korunur. Spam mesajlar otomatik filtrelenir.</p>
+            </div>
+        </aside>
+
+        <div class="contact-form-panel">
+            {{ form_start(form, {attr: {class: 'contact-form-panel__form', 'data-turnstile-form': ''}}) }}
+                <div class="contact-form-panel__row">
+                    {{ form_label(form.name, null, {label_attr: {class: 'contact-form__label'}}) }}
+                    {{ form_widget(form.name, {attr: {class: 'search-input w-full'}}) }}
+                    {{ form_errors(form.name) }}
+                </div>
+                <div class="contact-form-panel__row">
+                    {{ form_label(form.email, null, {label_attr: {class: 'contact-form__label'}}) }}
+                    {{ form_widget(form.email, {attr: {class: 'search-input w-full'}}) }}
+                    {{ form_errors(form.email) }}
+                </div>
+                <div class="contact-form-panel__row">
+                    {{ form_label(form.subject, null, {label_attr: {class: 'contact-form__label'}}) }}
+                    {{ form_widget(form.subject, {attr: {class: 'search-input w-full'}}) }}
+                    {{ form_errors(form.subject) }}
+                </div>
+                <div class="contact-form-panel__row">
+                    {{ form_label(form.message, null, {label_attr: {class: 'contact-form__label'}}) }}
+                    {{ form_widget(form.message, {attr: {class: 'search-input w-full min-h-[160px] py-3'}}) }}
+                    {{ form_errors(form.message) }}
+                </div>
+                {{ form_widget(form.cf_turnstile_response) }}
+                {% include 'front/partials/turnstile.html.twig' %}
+                <button type="submit" class="btn-primary contact-form-panel__submit">
+                    <i class="bi bi-send me-1"></i> Mesaj Gönder
+                </button>
+            {{ form_end(form) }}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if turnstile_enabled() %}
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" async defer></script>
+    {% endif %}
+{% endblock %}

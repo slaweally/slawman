@@ -1,0 +1,74 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{{ layout.breadcrumb([
+    {url: path('front_howto'), label: 'Nasıl Yapılır'},
+    {label: post.title}
+]) }}
+
+{{ layout.type_strip('howto', post_meta(post, 'estimated_time')) }}
+
+<div class="detail-panel detail-panel--howto">
+    <header class="detail-head">
+        <h1 class="detail-head__title">{{ post.title }}</h1>
+        {% include 'front/post/show/_meta.html.twig' %}
+    </header>
+
+    <div class="howto-meta-bar">
+        {% if post_meta(post, 'difficulty') %}
+            <span class="howto-badge howto-badge--{{ post_meta(post, 'difficulty') }}">
+                <i class="bi bi-speedometer2"></i>
+                {{ howto_difficulty_label(post_meta(post, 'difficulty')) }}
+            </span>
+        {% endif %}
+        {% if post_meta(post, 'estimated_time') %}
+            <span class="howto-badge howto-badge--time">
+                <i class="bi bi-clock"></i> {{ post_meta(post, 'estimated_time') }}
+            </span>
+        {% endif %}
+        <span class="howto-badge howto-badge--time">
+            <i class="bi bi-list-ol"></i> {{ post.content|reading_time }}
+        </span>
+    </div>
+
+    {% if post.featuredImage %}
+        <figure class="detail-hero">
+            {% set img = responsive_image(post.featuredImage) %}
+            <picture>
+                {% if img.webp_srcset %}<source type="image/webp" srcset="{{ img.webp_srcset }}" sizes="{{ img.sizes }}">{% endif %}
+                <img src="{{ post.featuredImage }}" alt="{{ post.title }}" loading="eager" fetchpriority="high">
+            </picture>
+        </figure>
+    {% endif %}
+
+    {% if post.excerpt %}
+        <div class="detail-lead">{{ post.excerpt }}</div>
+    {% endif %}
+
+    {% if post_meta(post, 'prerequisites') %}
+        <div class="howto-prereq">
+            <h2 class="howto-prereq__title"><i class="bi bi-check2-square"></i> Ön Koşullar</h2>
+            <ul class="howto-prereq__list">
+                {% for item in post_meta(post, 'prerequisites')|tech_stack_list %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if post_meta(post, 'tools_required') %}
+        <div class="howto-tools">
+            <h2 class="howto-tools__title"><i class="bi bi-tools"></i> Gerekli Araçlar</h2>
+            <div class="howto-tools__items">
+                {% for tool in post_meta(post, 'tools_required')|tech_stack_list %}
+                    <span class="badge-tech">{{ tool }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="howto-steps-header">
+        <h2><i class="bi bi-signpost-split"></i> Adımlar</h2>
+    </div>
+
+    <div class="detail-body howto-prose">{{ post.content|raw }}</div>
+</div>

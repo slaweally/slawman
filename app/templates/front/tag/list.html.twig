@@ -1,0 +1,16 @@
+{% extends 'front/layout/base.html.twig' %}
+{% block body %}
+<div class="section-head mb-4">
+    <h1 class="section-title font-mono">Tüm etiketler</h1>
+</div>
+
+<div class="tag-cloud tag-cloud--page">
+    {% for tag in pagination %}
+        <a href="{{ tag_path(tag) }}" class="tag-pill">#{{ tag.name }}</a>
+    {% else %}
+        <p class="text-sm text-text-muted">Henüz etiket yok.</p>
+    {% endfor %}
+</div>
+
+{{ knp_pagination_render(pagination) }}
+{% endblock %}

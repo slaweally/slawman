@@ -1,0 +1,164 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Güvenlik Alarmları{% endblock %}
+{% block page_subtitle %}WAF ve giriş katmanının tespit ettiği şüpheli istekler{% endblock %}
+{% block body %}
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted small">Son 24 Saat — Toplam Alarm</div>
+                <div class="h2 mb-0">{{ count24h }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card border-danger">
+            <div class="card-body">
+                <div class="text-danger small fw-semibold">Son 24 Saat — Kritik</div>
+                <div class="h2 mb-0 text-danger">{{ countCritical24h }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Son 7 Gün — En Aktif IP'ler</div>
+                {% for offender in topOffenders %}
+                    <div class="d-flex justify-content-between small font-monospace">
+                        <span>{{ offender.ipAddress }}</span>
+                        <span class="text-muted">{{ offender.hits }}</span>
+                    </div>
+                {% else %}
+                    <div class="text-muted small">Kayıt yok.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
+        <span>Alarm Kayıtları</span>
+        <form method="get" class="d-flex gap-2">
+            <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Tüm Türler</option>
+                {% for value, label in typeLabels %}
+                    <option value="{{ value }}" {{ activeType == value ? 'selected' : '' }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select name="severity" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Tüm Seviyeler</option>
+                {% for value, label in severityLabels %}
+                    <option value="{{ value }}" {{ activeSeverity == value ? 'selected' : '' }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <div class="table-responsive"><table class="table card-table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Seviye</th>
+                <th>Tür</th>
+                <th>IP</th>
+                <th>Yol</th>
+                <th>Sebep</th>
+                <th class="text-end">Adet</th>
+                <th>Mail</th>
+                <th>Son Görülme</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="security-alert-tbody">
+        {% for alert in pagination %}
+            <tr class="{{ alert.severity == 'critical' ? 'table-danger' : (alert.severity == 'high' ? 'table-warning' : '') }}"
+                data-alert-row="{{ alert.id }}" style="{{ alert.isRead ? 'opacity:.5' : '' }}">
+                <td>
+                    <button type="button" class="btn btn-icon btn-sm security-alert-toggle-read"
+                            data-url="{{ path('admin_security_alert_toggle_read', {id: alert.id}) }}"
+                            data-token="{{ csrf_token('security_alert_toggle_read_' ~ alert.id) }}"
+                            title="{{ alert.isRead ? 'Okunmadı yap' : 'Okundu yap' }}">
+                        <i class="bi {{ alert.isRead ? 'bi-eye-slash' : 'bi-eye' }}"></i>
+                    </button>
+                </td>
+                <td>
+                    <span class="badge {{ alert.severity == 'critical' ? 'bg-danger' : (alert.severity == 'high' ? 'bg-warning text-dark' : 'bg-secondary-lt') }}">
+                        {{ severityLabels[alert.severity]|default(alert.severity)|upper }}
+                    </span>
+                </td>
+                <td>{{ typeLabels[alert.type]|default(alert.type) }}</td>
+                <td class="font-monospace small">{{ alert.ipAddress }}</td>
+                <td class="small text-break">{{ alert.requestMethod }} {{ alert.requestPath }}</td>
+                <td class="small text-muted">{{ alert.reason|default('-')|slice(0, 120) }}</td>
+                <td class="text-end">
+                    <span class="badge {{ alert.hitCount > 1 ? 'bg-danger-lt' : 'bg-secondary-lt' }}" title="İlk görülme: {{ alert.createdAt|date('d.m.Y H:i:s') }}">
+                        {{ alert.hitCount }}
+                    </span>
+                </td>
+                <td>
+                    {% if alert.mailSent %}
+                        <i class="bi bi-envelope-check text-success" title="Admin bilgilendirildi"></i>
+                    {% else %}
+                        <i class="bi bi-envelope-slash text-muted" title="Mail tetiklenmedi"></i>
+                    {% endif %}
+                </td>
+                <td class="small">{{ alert.lastSeenAt|date('d.m.Y H:i:s') }}</td>
+                <td>
+                    <button type="button" class="btn btn-icon btn-sm text-danger security-alert-delete"
+                            data-url="{{ path('admin_security_alert_delete', {id: alert.id}) }}"
+                            data-token="{{ csrf_token('security_alert_delete_' ~ alert.id) }}"
+                            title="Sil">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="10" class="text-muted">Kayıtlı güvenlik alarmı yok.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+    <div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div>
+</div>
+
+<script>
+(function () {
+    function postForm(url, token, extra) {
+        const body = new URLSearchParams({ _token: token, ...extra });
+        return fetch(url, { method: 'POST', body, headers: { 'Accept': 'application/json' } }).then((r) => r.json());
+    }
+
+    document.querySelectorAll('.security-alert-toggle-read').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            postForm(btn.dataset.url, btn.dataset.token).then((res) => {
+                if (!res.ok) return;
+                const row = btn.closest('tr');
+                const icon = btn.querySelector('i');
+                if (res.isRead) {
+                    row.style.opacity = '.5';
+                    icon.classList.replace('bi-eye', 'bi-eye-slash');
+                    btn.title = 'Okunmadı yap';
+                } else {
+                    row.style.opacity = '';
+                    icon.classList.replace('bi-eye-slash', 'bi-eye');
+                    btn.title = 'Okundu yap';
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.security-alert-delete').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            if (!confirm('Bu alarm kaydı silinsin mi?')) return;
+            fetch(btn.dataset.url, {
+                method: 'DELETE',
+                body: new URLSearchParams({ _token: btn.dataset.token }),
+                headers: { 'Accept': 'application/json' },
+            }).then((r) => r.json()).then((res) => {
+                if (res.ok) btn.closest('tr').remove();
+            });
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% if setting_enabled('footer_tags_enabled') %}
+{% set footerTags = get_footer_tags() %}
+{% if footerTags|length %}
+<section class="footer-tags-bar" aria-label="Etiketler">
+    <div class="footer-tags-bar__inner">
+        <div class="footer-tags-bar__cloud">
+            {% for tag in footerTags %}
+                <a href="{{ tag_path(tag) }}" class="tag-pill tag-pill--sm">#{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+        <a href="{{ path('front_tags') }}" class="footer-tags-bar__all-btn font-mono">Tüm etiketler →</a>
+    </div>
+</section>
+{% endif %}
+{% endif %}

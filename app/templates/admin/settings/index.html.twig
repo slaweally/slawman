@@ -1,0 +1,274 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Ayarlar{% endblock %}
+{% block page_actions %}
+<div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ path('admin_settings_export') }}" target="_blank" rel="noopener">
+        <i class="bi bi-download me-1"></i>JSON Dışa Aktar
+    </a>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#settings-import-box">
+        <i class="bi bi-upload me-1"></i>JSON İçe Aktar
+    </button>
+</div>
+{% endblock %}
+{% block body %}
+<div id="settings-import-box" class="collapse mb-3">
+    <div class="card card-body">
+        <form method="post" action="{{ path('admin_settings_import') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('settings_import') }}">
+            <label class="form-label">JSON Payload</label>
+            <textarea class="form-control" name="payload" rows="6" placeholder='{"settings":{"site_title":"..."}}'></textarea>
+            <button type="submit" class="btn btn-sm btn-primary mt-2">İçe Aktar</button>
+        </form>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3 admin-settings-tabs">
+    {% for groupKey, groupMeta in groups %}
+        <li class="nav-item">
+            <a class="nav-link {{ activeTab == groupKey ? 'active' : '' }}" href="{{ path('admin_settings_index', {tab: groupKey}) }}">
+                <i class="{{ groupMeta.icon }} me-1"></i>{{ groupMeta.label }}
+            </a>
+        </li>
+    {% endfor %}
+</ul>
+
+<form method="post" enctype="multipart/form-data" class="card admin-settings-form" id="admin-settings-form"
+      data-media-upload-url="{{ path('admin_media_upload_ajax') }}"
+      data-media-list-url="{{ path('admin_media_list_ajax') }}"
+      data-upload-token="{{ csrf_token('media_upload') }}">
+    <div class="card-body">
+        <div class="mb-3">
+            <input type="search" id="settings-search" class="form-control" placeholder="Ayar ara...">
+        </div>
+        <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+        <input type="hidden" name="action" value="save">
+
+        {% set previousGroup = null %}
+        {% for key, meta in definitions %}
+            {% if meta.type != 'hidden' %}
+                {% if meta.group == 'waf' and previousGroup != 'waf' %}
+                    <hr class="my-4">
+                    <h3 class="h6 text-muted mb-1"><i class="bi bi-shield-lock me-1"></i>Güvenlik Duvarı (WAF) Konfigürasyonu</h3>
+                    <p class="text-muted small mb-3">Şüpheli istek tespiti, otomatik IP banı ve manuel liste yönetimi burada anlık olarak (kaydettikten sonra) devreye girer.</p>
+                {% endif %}
+                {% set previousGroup = meta.group %}
+                {% if key in ['cache_varnish_secret', 'cache_varnish_purge_url'] and settings.cache_varnish_mode|default('cloudpanel') != 'standalone' %}
+                {% else %}
+                <div class="mb-3">
+                    <label class="form-label" for="setting_{{ key }}">{{ meta.label }}</label>
+                    {% if meta.type == 'textarea' %}
+                        <textarea id="setting_{{ key }}" name="settings[{{ key }}]" class="form-control{{ key in ['waf_blacklist_ips', 'waf_whitelist_ips'] ? ' font-monospace' : '' }}" rows="{{ key in ['waf_blacklist_ips', 'waf_whitelist_ips'] ? 6 : 3 }}" placeholder="{{ key in ['waf_blacklist_ips', 'waf_whitelist_ips'] ? '203.0.113.10&#10;198.51.100.0' : '' }}">{{ settings[key]|default('') }}</textarea>
+                    {% elseif meta.type == 'checkbox' %}
+                        <div class="form-check">
+                            {% if key == 'cache_redis_enabled' and settings.cache_redis_test_ok not in ['1','true','yes','on'] %}
+                                <input type="checkbox" class="form-check-input" id="setting_{{ key }}" disabled>
+                                <input type="hidden" name="settings[{{ key }}]" value="">
+                                <label class="form-check-label text-muted" for="setting_{{ key }}">Aktif (önce bağlantı testi gerekli)</label>
+                            {% elseif key == 'cache_varnish_enabled' and settings.cache_varnish_test_ok not in ['1','true','yes','on'] %}
+                                <input type="checkbox" class="form-check-input" id="setting_{{ key }}" disabled>
+                                <input type="hidden" name="settings[{{ key }}]" value="">
+                                <label class="form-check-label text-muted" for="setting_{{ key }}">Aktif (önce bağlantı testi gerekli)</label>
+                            {% else %}
+                                <input type="checkbox" class="form-check-input" id="setting_{{ key }}" name="settings[{{ key }}]" value="true" {{ settings[key] in ['1','true','yes','on'] ? 'checked' : '' }}>
+                                <label class="form-check-label" for="setting_{{ key }}">Aktif</label>
+                            {% endif %}
+                        </div>
+                    {% elseif meta.type == 'password' %}
+                        <input type="password" id="setting_{{ key }}" name="settings[{{ key }}]" class="form-control" placeholder="Değiştirmek için yazın" autocomplete="new-password">
+                        {% if settings[key] %}<div class="form-text">Kayıtlı değer mevcut. Boş bırakırsanız korunur.</div>{% endif %}
+                    {% elseif meta.type == 'select' %}
+                        <select id="setting_{{ key }}" name="settings[{{ key }}]" class="form-select">
+                            {% for optValue, optLabel in meta.options|default({}) %}
+                                <option value="{{ optValue }}" {{ (settings[key]|default(meta.default|default(''))) == optValue ? 'selected' : '' }}>{{ optLabel }}</option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        <input type="{{ meta.type == 'number' ? 'number' : (meta.type == 'email' ? 'email' : 'text') }}"
+                               id="setting_{{ key }}"
+                               name="settings[{{ key }}]"
+                               class="form-control"
+                               value="{{ settings[key]|default('') }}">
+                    {% endif %}
+                    {% if key == 'cache_redis_enabled' and settings.cache_redis_test_ok in ['1','true','yes','on'] %}
+                        <div class="form-text text-success"><i class="bi bi-check-circle me-1"></i>Redis testi başarılı</div>
+                    {% endif %}
+                    {% if key == 'cache_varnish_enabled' and settings.cache_varnish_test_ok in ['1','true','yes','on'] %}
+                        <div class="form-text text-success"><i class="bi bi-check-circle me-1"></i>Varnish testi başarılı</div>
+                    {% endif %}
+                    {% if meta.help is defined %}
+                        <div class="form-text">{{ meta.help }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% if activeTab == 'general' %}
+            <hr class="my-4">
+            <h3 class="h6 text-muted mb-3">Marka Görselleri</h3>
+            {% include 'admin/partials/_media_asset_field.html.twig' with {
+                settingKey: 'site_logo',
+                inputId: 'setting_site_logo',
+                previewId: 'site-logo-preview',
+                uploadName: 'site_logo_file',
+                label: 'Site Logosu',
+                value: settings.site_logo|default(''),
+                help: 'Admin paneli, giriş sayfası ve site header\'ında kullanılır. PNG, SVG veya WebP önerilir.',
+                accept: 'image/*,.svg'
+            } %}
+            {% include 'admin/partials/_media_asset_field.html.twig' with {
+                settingKey: 'site_favicon',
+                inputId: 'setting_site_favicon',
+                previewId: 'site-favicon-preview',
+                uploadName: 'site_favicon_file',
+                label: 'Favicon',
+                value: settings.site_favicon|default(''),
+                help: 'Tarayıcı sekmesi ikonu. Kare PNG/ICO/SVG, tercihen 32×32 veya 64×64.',
+                accept: 'image/*,.ico,.svg'
+            } %}
+        {% endif %}
+
+        {% if activeTab == 'permalinks' %}
+            <div class="alert alert-info">
+                WordPress'ten içe aktarım sonrası eski URL'leri korumak için <strong>Yazı adı</strong> yapısını seçin ve gerekirse <strong>.html</strong> uzantısı ekleyin.
+                Kategori/etiket tabanlarını <code>category</code> ve <code>tag</code> olarak ayarlayabilirsiniz.
+            </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Kaydet</button>
+    </div>
+</form>
+
+{% if activeTab == 'performance' %}
+<div class="card mt-3">
+    <div class="card-header">Sistem Bakımı</div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Üst çubuktaki <strong>Bakım / Önbellek</strong> düğmesi şunları yapar:
+            Symfony + Redis + Varnish önbelleği, OPcache sıfırlama, medya/import dizinleri kontrolü,
+            eski <code>var/uploads</code> dosyalarını <code>slw-content/uploads</code> altına kopyalama.
+        </p>
+        <form method="post" action="{{ path('admin_settings_cache_clear') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('cache_clear') }}">
+            <button type="submit" class="btn btn-warning" data-confirm-message="Önbellek temizlensin ve sistem bakımı çalıştırılsın mı?">
+                <i class="bi bi-broom me-1"></i> Bakım ve Önbellek Temizle
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">Redis Bağlantı Testi</div>
+    <div class="card-body">
+        <form method="post" action="{{ path('admin_settings_test_redis') }}" class="row g-2 align-items-end">
+            <input type="hidden" name="_token" value="{{ csrf_token('test_redis') }}">
+            <div class="col-md-8">
+                <label class="form-label">Redis DSN</label>
+                <input type="text" name="cache_redis_dsn" class="form-control" value="{{ settings.cache_redis_dsn|default('redis://127.0.0.1:6379') }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-plug me-1"></i> Redis Test Et</button>
+            </div>
+        </form>
+        <p class="text-muted small mt-2 mb-0">Test başarılı olmadan Redis etkinleştirilemez. PHP ext-redis eklentisi önerilir.</p>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">Varnish Bağlantı Testi (CloudPanel)</div>
+    <div class="card-body">
+        {% if cloudPanelVarnish %}
+            <div class="alert alert-info py-2 small mb-3">
+                CloudPanel ayar dosyası bulundu (<code>~/.varnish-cache/settings.json</code>).
+                Tag prefix: <strong>{{ cloudPanelVarnish.cacheTagPrefix|default('-') }}</strong>,
+                sunucu: <strong>{{ cloudPanelVarnish.server|default('-') }}</strong>
+            </div>
+        {% endif %}
+        <form method="post" action="{{ path('admin_settings_test_varnish') }}" class="row g-2">
+            <input type="hidden" name="_token" value="{{ csrf_token('test_varnish') }}">
+            <div class="col-md-3">
+                <label class="form-label">Mod</label>
+                <select name="cache_varnish_mode" class="form-select">
+                    <option value="cloudpanel" {{ settings.cache_varnish_mode|default('cloudpanel') == 'cloudpanel' ? 'selected' : '' }}>CloudPanel</option>
+                    <option value="standalone" {{ settings.cache_varnish_mode|default('cloudpanel') == 'standalone' ? 'selected' : '' }}>Standalone</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Host</label>
+                <input type="text" name="cache_varnish_host" class="form-control" value="{{ settings.cache_varnish_host|default('127.0.0.1') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Port</label>
+                <input type="number" name="cache_varnish_port" class="form-control" value="{{ settings.cache_varnish_port|default('6081') }}">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Cache Tag Prefix</label>
+                <input type="text" name="cache_varnish_tag_prefix" class="form-control"
+                       value="{{ settings.cache_varnish_tag_prefix|default(cloudPanelVarnish.cacheTagPrefix|default('')) }}"
+                       placeholder="CloudPanel Varnish ayarındaki prefix">
+            </div>
+            <div class="col-md-4 varnish-standalone-field" style="display:none">
+                <label class="form-label">Secret (standalone)</label>
+                <input type="password" name="cache_varnish_secret" class="form-control" placeholder="Varnish secret">
+            </div>
+            <div class="col-md-5 varnish-standalone-field" style="display:none">
+                <label class="form-label">PURGE URL (standalone)</label>
+                <input type="url" name="cache_varnish_purge_url" class="form-control" value="{{ settings.cache_varnish_purge_url|default('') }}" placeholder="https://siteniz.com/">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plug me-1"></i> Varnish Test Et</button>
+            </div>
+        </form>
+        <p class="text-muted small mt-2 mb-0">
+            CloudPanel modunda test, <code>PURGE http://127.0.0.1:6081</code> + <code>X-Cache-Tags</code> header gönderir.
+            Cache Tag Prefix, CloudPanel → Varnish Cache ekranındaki değerle birebir aynı olmalıdır.
+        </p>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const modeSelect = document.querySelector('select[name="cache_varnish_mode"]');
+    const standaloneFields = document.querySelectorAll('.varnish-standalone-field');
+    const toggle = () => {
+        const show = modeSelect && modeSelect.value === 'standalone';
+        standaloneFields.forEach((el) => { el.style.display = show ? '' : 'none'; });
+    };
+    modeSelect?.addEventListener('change', toggle);
+    toggle();
+});
+</script>
+{% endif %}
+
+{% if activeTab == 'smtp' %}
+<div class="card mt-3">
+    <div class="card-header">SMTP Test</div>
+    <div class="card-body">
+        <form method="post" action="{{ path('admin_settings_smtp_test') }}" class="row g-2 align-items-end">
+            <input type="hidden" name="_token" value="{{ csrf_token('smtp_test') }}">
+            <div class="col-md-6">
+                <label class="form-label">Test E-posta Adresi</label>
+                <input type="email" name="test_email" class="form-control" value="{{ settings.site_email|default('') }}" required>
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-envelope-check me-1"></i> Test Gönder</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% include 'admin/post/_media_picker_modal.html.twig' %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('settings-search');
+    if (!input) return;
+    input.addEventListener('input', () => {
+        const q = input.value.toLowerCase().trim();
+        document.querySelectorAll('label.form-label[for^="setting_"]').forEach((label) => {
+            const wrapper = label.closest('.mb-3');
+            if (!wrapper) return;
+            wrapper.style.display = q === '' || label.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

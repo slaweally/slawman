@@ -1,0 +1,110 @@
+{% if commentsEnabled and commentForm %}
+{% import 'front/macros/comment.html.twig' as commentUi %}
+<section id="comments" class="comments-section"
+         x-data="{
+             replyTo: 0,
+             replyAuthor: '',
+             setReply(id, author) {
+                 this.replyTo = id;
+                 this.replyAuthor = author;
+                 const input = document.getElementById('comment_form_parentId');
+                 if (input) input.value = id;
+                 document.getElementById('comment-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+             },
+             clearReply() {
+                 this.replyTo = 0;
+                 this.replyAuthor = '';
+                 const input = document.getElementById('comment_form_parentId');
+                 if (input) input.value = '';
+             }
+         }">
+    <h2 class="comments-section__title font-mono">comments[] <span class="text-text-faint">({{ comments|length }})</span></h2>
+
+    {% if comments|length %}
+        <ol class="comments-list">
+            {% for comment in comments %}
+                <li class="comment-item" id="comment-{{ comment.id }}">
+                    <div class="comment-item__head">
+                        <span class="comment-item__avatar" aria-hidden="true">{{ comment.authorName|slice(0, 1)|upper }}</span>
+                        <div class="comment-item__meta">
+                            {{ commentUi.author_name(comment) }}
+                            <time class="comment-item__date" datetime="{{ comment.createdAt|date('c') }}">{{ comment.createdAt|time_ago }}</time>
+                        </div>
+                        <div class="comment-item__actions">
+                            <button type="button" class="comment-item__reply-btn" @click="setReply({{ comment.id }}, {{ comment.authorName|json_encode }})">
+                                <i class="bi bi-reply"></i> Yanıtla
+                            </button>
+                        </div>
+                    </div>
+                    <p class="comment-item__body">{{ comment.content|nl2br }}</p>
+                    {% if comment.replies|length %}
+                        <ol class="comments-list comments-list--replies">
+                            {% for reply in comment.replies %}
+                                {% if reply.status.value == 'approved' %}
+                                <li class="comment-item comment-item--reply" id="comment-{{ reply.id }}">
+                                    <div class="comment-item__head">
+                                        <span class="comment-item__avatar" aria-hidden="true">{{ reply.authorName|slice(0, 1)|upper }}</span>
+                                        <div class="comment-item__meta">
+                                            {{ commentUi.author_name(reply) }}
+                                            <time class="comment-item__date" datetime="{{ reply.createdAt|date('c') }}">{{ reply.createdAt|time_ago }}</time>
+                                        </div>
+                                        <div class="comment-item__actions">
+                                            <button type="button" class="comment-item__reply-btn" @click="setReply({{ comment.id }}, {{ comment.authorName|json_encode }})">
+                                                <i class="bi bi-reply"></i> Yanıtla
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="comment-item__body">{{ reply.content|nl2br }}</p>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        <p class="text-sm text-text-muted mb-4">Henüz yorum yok. İlk yorumu siz yazın.</p>
+    {% endif %}
+
+    <div class="comment-form-card" id="comment-form">
+        <h3 class="comment-form-card__title">Yorum Yaz</h3>
+        <form method="post" action="{{ path('front_comment_submit') }}" class="comment-form" data-turnstile-form>
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            {{ form_widget(commentForm._token) }}
+            {{ form_widget(commentForm.parentId) }}
+
+            <div class="comment-reply-banner" x-show="replyTo > 0" x-cloak>
+                <span x-text="'Yanıt: ' + replyAuthor"></span>
+                <button type="button" class="comment-reply-banner__cancel" @click="clearReply()">İptal</button>
+            </div>
+
+            <div class="comment-form__grid">
+                <div>
+                    {{ form_label(commentForm.authorName, null, {label_attr: {class: 'comment-form__label'}}) }}
+                    {{ form_widget(commentForm.authorName, {attr: {class: 'search-input w-full'}}) }}
+                    {{ form_errors(commentForm.authorName) }}
+                </div>
+                <div>
+                    {{ form_label(commentForm.authorEmail, null, {label_attr: {class: 'comment-form__label'}}) }}
+                    {{ form_widget(commentForm.authorEmail, {attr: {class: 'search-input w-full'}}) }}
+                    {{ form_errors(commentForm.authorEmail) }}
+                </div>
+                <div>
+                    {{ form_label(commentForm.authorWebsite, null, {label_attr: {class: 'comment-form__label'}}) }}
+                    {{ form_widget(commentForm.authorWebsite, {attr: {class: 'search-input w-full'}}) }}
+                    {{ form_errors(commentForm.authorWebsite) }}
+                </div>
+            </div>
+            <div class="mt-3">
+                {{ form_label(commentForm.content, null, {label_attr: {class: 'comment-form__label'}}) }}
+                {{ form_widget(commentForm.content, {attr: {class: 'search-input w-full min-h-[100px] py-3'}}) }}
+                {{ form_errors(commentForm.content) }}
+            </div>
+            {{ form_widget(commentForm.cf_turnstile_response) }}
+            {% include 'front/partials/turnstile.html.twig' %}
+            <button type="submit" class="btn-primary mt-4">Yorum Gönder</button>
+        </form>
+    </div>
+</section>
+{% endif %}

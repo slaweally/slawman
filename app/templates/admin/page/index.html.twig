@@ -1,0 +1,55 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Sayfalar{% endblock %}
+{% block page_subtitle %}Hakkımızda, Gizlilik Politikası gibi statik sayfalar{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_page_new') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-file-earmark-plus me-1"></i> Yeni Sayfa
+    </a>
+{% endblock %}
+{% block body %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>Başlık</th>
+                    <th>Slug</th>
+                    <th>Durum</th>
+                    <th>Güncelleme</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for page in pagination %}
+                <tr>
+                    <td>{{ page.title }}</td>
+                    <td><code>/sayfa/{{ page.slug }}</code></td>
+                    <td>
+                        <span class="badge bg-{{ page.status.value == 'published' ? 'success' : 'secondary' }}-lt">
+                            {{ page.status.value }}
+                        </span>
+                    </td>
+                    <td>{{ page.updatedAt|date('d.m.Y H:i') }}</td>
+                    <td class="text-end">
+                        {% if page.status.value == 'published' %}
+                            <a href="{{ page_path(page) }}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">Görüntüle</a>
+                        {% endif %}
+                        <a href="{{ path('admin_post_edit', {id: page.id}) }}" class="btn btn-sm">Düzenle</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-muted text-center py-4">
+                        Henüz sayfa yok.
+                        <a href="{{ path('admin_page_new') }}">İlk sayfayı oluştur</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination|length %}
+        <div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div>
+    {% endif %}
+</div>
+{% endblock %}

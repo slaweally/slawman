@@ -1,0 +1,35 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Etiketler{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_tag_new') }}" class="btn btn-primary btn-sm">Yeni Etiket</a>
+{% endblock %}
+{% block body %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table table-hover">
+            <thead><tr><th>Ad</th><th>Slug</th><th></th></tr></thead>
+            <tbody>
+            {% for tag in pagination %}
+                <tr>
+                    <td>{{ tag.name }}</td>
+                    <td><code>{{ tag.slug }}</code></td>
+                    <td class="text-end">
+                        <a href="{{ tag_path(tag) }}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">Görüntüle</a>
+                        <a href="{{ path('admin_tag_edit', {id: tag.id}) }}" class="btn btn-sm">Düzenle</a>
+                        <form method="post" action="{{ path('admin_tag_delete', {id: tag.id}) }}" class="d-inline" onsubmit="return confirm('Silinsin mi?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tag.id) }}">
+                            <button class="btn btn-sm btn-danger">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3" class="text-muted text-center py-4">Etiket yok.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination.pageCount > 1 %}
+    <div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div>
+    {% endif %}
+</div>
+{% endblock %}

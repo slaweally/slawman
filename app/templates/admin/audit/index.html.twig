@@ -1,0 +1,19 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Audit Log{% endblock %}
+{% block body %}
+<div class="card"><div class="table-responsive"><table class="table card-table">
+    <thead><tr><th>Kullanıcı</th><th>İşlem</th><th>Varlık</th><th>IP</th><th>Tarih</th></tr></thead>
+    <tbody>
+    {% for log in pagination %}
+        <tr>
+            <td>{{ log.user ? log.user.username : '-' }}</td>
+            <td>{{ log.action }}</td>
+            <td>{{ log.entityType }} #{{ log.entityId }}</td>
+            <td>{{ log.ipAddress }}</td>
+            <td>{{ log.createdAt|date('d.m.Y H:i') }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+<div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div></div>
+{% endblock %}

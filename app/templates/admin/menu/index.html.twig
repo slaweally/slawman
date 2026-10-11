@@ -1,0 +1,96 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Menüler{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_menu_new') }}" class="btn btn-primary btn-sm">Yeni Öğe</a>
+{% endblock %}
+
+{% macro render_nestable(items) %}
+    <ol class="menu-nestable__list">
+        {% for item in items %}
+            <li class="menu-nestable__item" data-id="{{ item.id }}" draggable="true">
+                <div class="menu-nestable__row">
+                    <span class="menu-nestable__handle"><i class="bi bi-grip-vertical"></i></span>
+                    {% if item.icon %}<i class="{{ item.icon }} me-1"></i>{% endif %}
+                    <span class="menu-nestable__label">{{ item.label }}</span>
+                    <span class="menu-nestable__url text-muted small">{{ item.url }}</span>
+                    <span class="menu-nestable__actions">
+                        <a href="{{ path('admin_menu_edit', {id: item.id}) }}" class="btn btn-sm">Düzenle</a>
+                        <form method="post" action="{{ path('admin_menu_delete', {id: item.id}) }}" class="d-inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ item.id) }}">
+                            <button class="btn btn-sm btn-danger">Sil</button>
+                        </form>
+                    </span>
+                </div>
+                <ol class="menu-nestable__list menu-nestable__list--nested" data-nested-for="{{ item.id }}">
+                    {% for child in item.children %}
+                        <li class="menu-nestable__item" data-id="{{ child.id }}" draggable="true">
+                            <div class="menu-nestable__row">
+                                <span class="menu-nestable__handle"><i class="bi bi-grip-vertical"></i></span>
+                                {% if child.icon %}<i class="{{ child.icon }} me-1"></i>{% endif %}
+                                <span class="menu-nestable__label">{{ child.label }}</span>
+                                <span class="menu-nestable__url text-muted small">{{ child.url }}</span>
+                                <span class="menu-nestable__actions">
+                                    <a href="{{ path('admin_menu_edit', {id: child.id}) }}" class="btn btn-sm">Düzenle</a>
+                                    <form method="post" action="{{ path('admin_menu_delete', {id: child.id}) }}" class="d-inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ child.id) }}">
+                                        <button class="btn btn-sm btn-danger">Sil</button>
+                                    </form>
+                                </span>
+                            </div>
+                            <ol class="menu-nestable__list menu-nestable__list--nested" data-nested-for="{{ child.id }}"></ol>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </li>
+        {% else %}
+            <li class="text-muted small py-2">Henüz öğe yok.</li>
+        {% endfor %}
+    </ol>
+{% endmacro %}
+
+{% block body %}
+<p class="text-muted small mb-3">
+    <i class="bi bi-info-circle me-1"></i>
+    Öğeleri sürükleyip bırakın. Bir öğeyi başka bir öğenin altına bırakırsanız, onun dropdown alt menüsü olur.
+    Sıralama otomatik kaydedilir.
+</p>
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                Üst Menü (Header)
+                <span class="menu-nestable__save-status small text-muted" data-save-status="header"></span>
+            </div>
+            <div class="card-body">
+                <div class="menu-nestable" data-menu-location="header" data-save-url="{{ path('admin_menu_save_order') }}" data-csrf-token="{{ csrf_token('menu_save_order') }}">
+                    {{ _self.render_nestable(headerItems) }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                Alt Menü (Footer)
+                <span class="menu-nestable__save-status small text-muted" data-save-status="footer"></span>
+            </div>
+            <div class="card-body">
+                <div class="menu-nestable" data-menu-location="footer" data-save-url="{{ path('admin_menu_save_order') }}" data-csrf-token="{{ csrf_token('menu_save_order') }}">
+                    {{ _self.render_nestable(footerItems) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window.initMenuNestable === 'function') {
+                window.initMenuNestable();
+            }
+        });
+    </script>
+{% endblock %}

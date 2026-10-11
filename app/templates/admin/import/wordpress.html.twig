@@ -1,0 +1,361 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}WordPress İçe Aktar{% endblock %}
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_tools_index') }}">Araçlar</a></li>
+        <li class="breadcrumb-item active">WordPress İçe Aktar</li>
+    </ol>
+</nav>
+{% endblock %}
+{% block body %}
+<h2 class="mb-3"><i class="bi bi-wordpress me-2"></i>WordPress İçe Aktar</h2>
+<p class="text-muted">WordPress WXR dosyasından makale, sayfa, kategori, etiket, yorum ve medyaları aktarın. Önce dosya doğrulanır; onay sonrası içe aktarım başlar. Daha önce aktarılmış içerikler atlanır.</p>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-file-earmark-code me-1"></i> 1. WXR Dosyası Yükle ve Önizle</div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">WordPress → Araçlar → Dışa Aktar → Tüm içerik. Oluşan .xml dosyasını yükleyin.</p>
+                <form method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="_token" value="{{ csrf_token('wp_import') }}">
+                    <input type="hidden" name="action" value="preview">
+                    <div class="mb-3">
+                        <label class="form-label">WXR XML Dosyası</label>
+                        <input type="file" name="wxr_file" class="form-control" accept=".xml,text/xml" required>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search me-1"></i> Dosyayı Doğrula ve Önizle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header text-danger"><i class="bi bi-arrow-counterclockwise me-1"></i> Toplu Geri Alma</div>
+            <div class="card-body">
+                <p class="text-muted small">Bir içe aktarma batch'ini tamamen siler: içerikler, yorumlar ve indirilen medyalar.</p>
+                {% if batches|length %}
+                    <form method="post" onsubmit="return confirm('Bu batch içindeki TÜM içerikler silinecek. Emin misiniz?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('wp_rollback') }}">
+                        <input type="hidden" name="action" value="rollback">
+                        <div class="mb-3">
+                            <label class="form-label">Önceki İçe Aktarma Batch</label>
+                            <select name="batch_id" class="form-select" required>
+                                {% for batch in batches %}
+                                    <option value="{{ batch }}">{{ batch }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-1"></i> Batch'i Geri Al
+                        </button>
+                    </form>
+                {% else %}
+                    <p class="text-muted small mb-0">Henüz geri alınabilir içe aktarma yok.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if preview %}
+<div class="card mt-3 border-primary">
+    <div class="card-header bg-primary-lt">
+        <i class="bi bi-clipboard-check me-1"></i> Önizleme: {{ preview.filename }}
+    </div>
+    <div class="card-body">
+        {% set data = preview.data %}
+        {% set counts = data.preview.counts|default({}) %}
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="border rounded p-2 text-center">
+                    <div class="h3 mb-0">{{ counts.posts|default(0) }}</div>
+                    <div class="text-muted small">Makale</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-2 text-center">
+                    <div class="h3 mb-0">{{ counts.pages|default(0) }}</div>
+                    <div class="text-muted small">Sayfa</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-2 text-center">
+                    <div class="h3 mb-0">{{ data.preview.new_items|default(0) }}</div>
+                    <div class="text-muted small">Yeni İçerik</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-2 text-center">
+                    <div class="h4 mb-0">{{ counts.categories|default(0) }}</div>
+                    <div class="text-muted small">Kategori</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-2 text-center">
+                    <div class="h4 mb-0">{{ counts.tags|default(0) }}</div>
+                    <div class="text-muted small">Etiket</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-2 text-center">
+                    <div class="h4 mb-0">{{ counts.comments|default(0) }}</div>
+                    <div class="text-muted small">Yorum</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-2 text-center">
+                    <div class="h4 mb-0">{{ data.preview.media_urls|default(0) }}</div>
+                    <div class="text-muted small">Medya URL</div>
+                </div>
+            </div>
+        </div>
+
+        <dl class="row small mb-3">
+            <dt class="col-sm-3">Site</dt>
+            <dd class="col-sm-9">{{ data.preview.site_title|default('-') }}</dd>
+            <dt class="col-sm-3">Kaynak URL</dt>
+            <dd class="col-sm-9"><code>{{ data.preview.base_url|default('-') }}</code></dd>
+            <dt class="col-sm-3">Atlanacak</dt>
+            <dd class="col-sm-9">{{ data.preview.duplicates|default(0) }} (daha önce aktarılmış)</dd>
+        </dl>
+
+        {% if data.errors|length %}
+            <div class="alert alert-danger">
+                <strong>Doğrulama Hataları</strong>
+                <ul class="mb-0 mt-2">
+                    {% for error in data.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if data.warnings|length %}
+            <div class="alert alert-warning">
+                <strong>Uyarılar</strong>
+                <ul class="mb-0 mt-2">
+                    {% for warning in data.warnings %}
+                        <li>{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if data.valid %}
+            <div class="border-top pt-3" id="wp-import-panel">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Adım başına içerik sayısı</label>
+                        <select id="wp-chunk-size" class="form-select">
+                            <option value="10" selected>10 içerik / adım (yavaş sunucu)</option>
+                            <option value="20">20 içerik / adım (önerilen)</option>
+                            <option value="50">50 içerik / adım (hızlı sunucu)</option>
+                        </select>
+                        <div class="form-text">Medya indirme her adımda en fazla 10 dosya işlenir.</div>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="wp-download-media" checked>
+                            <label class="form-check-label" for="wp-download-media">Medya dosyalarını kaynak siteden indir</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="wp-import-idle">
+                    <button type="button" class="btn btn-primary" id="wp-import-start">
+                        <i class="bi bi-upload me-1"></i> 2. Adım Adım İçe Aktarmayı Başlat
+                    </button>
+                </div>
+
+                <div id="wp-import-running" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong id="wp-phase-label">Hazırlanıyor...</strong>
+                        <span class="text-muted small" id="wp-overall-percent">0%</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 22px;">
+                        <div id="wp-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                    <p class="small text-muted mb-2" id="wp-step-message">İşlem başlatılıyor...</p>
+                    <div class="border rounded p-2 bg-light mb-3" style="max-height: 180px; overflow-y: auto;">
+                        <ul class="list-unstyled small mb-0" id="wp-log"></ul>
+                    </div>
+                    <div class="row g-2 small mb-3" id="wp-live-stats">
+                        <div class="col-auto"><span class="badge bg-secondary">Makale: <span id="stat-posts">0</span></span></div>
+                        <div class="col-auto"><span class="badge bg-secondary">Sayfa: <span id="stat-pages">0</span></span></div>
+                        <div class="col-auto"><span class="badge bg-secondary">Yorum: <span id="stat-comments">0</span></span></div>
+                        <div class="col-auto"><span class="badge bg-secondary">Medya: <span id="stat-media">0</span></span></div>
+                        <div class="col-auto"><span class="badge bg-warning text-dark">Atlandı: <span id="stat-skipped">0</span></span></div>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="wp-import-cancel">
+                        <i class="bi bi-x-circle me-1"></i> İptal Et ve Geri Al
+                    </button>
+                    <p class="text-muted small mt-2 mb-0">Sayfayı kapatırsanız işlem durur. Bu sayfaya geri döndüğünüzde kaldığı yerden otomatik devam eder.</p>
+                </div>
+
+                <div id="wp-import-done" class="d-none">
+                    <div class="alert alert-success mb-2">
+                        <strong>İçe aktarma tamamlandı.</strong>
+                        <div class="small mt-1">Batch ID: <code id="wp-done-batch"></code></div>
+                    </div>
+                    <ul class="small mb-0" id="wp-done-summary"></ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if preview and preview.data.valid %}
+    <script>
+    (function () {
+        const csrf = {{ csrf_token('wp_import')|json_encode|raw }};
+        const startUrl = {{ path('admin_import_wordpress_job_start')|json_encode|raw }};
+        const stepUrlTpl = {{ path('admin_import_wordpress_job_step', {jobId: '__JOB__'})|json_encode|raw }};
+        const cancelUrlTpl = {{ path('admin_import_wordpress_job_cancel', {jobId: '__JOB__'})|json_encode|raw }};
+        const activeJobId = {{ activeJobId|default(null)|json_encode|raw }};
+
+        const idle = document.getElementById('wp-import-idle');
+        const running = document.getElementById('wp-import-running');
+        const done = document.getElementById('wp-import-done');
+        const log = document.getElementById('wp-log');
+        const bar = document.getElementById('wp-progress-bar');
+        const phaseLabel = document.getElementById('wp-phase-label');
+        const stepMessage = document.getElementById('wp-step-message');
+        const overallPercent = document.getElementById('wp-overall-percent');
+        let currentJobId = null;
+        let cancelled = false;
+
+        function stepUrl(jobId) { return stepUrlTpl.replace('__JOB__', jobId); }
+        function cancelUrl(jobId) { return cancelUrlTpl.replace('__JOB__', jobId); }
+
+        function addLog(text) {
+            const li = document.createElement('li');
+            li.textContent = new Date().toLocaleTimeString('tr-TR') + ' — ' + text;
+            log.prepend(li);
+        }
+
+        function updateStats(stats) {
+            if (!stats) return;
+            document.getElementById('stat-posts').textContent = stats.posts ?? 0;
+            document.getElementById('stat-pages').textContent = stats.pages ?? 0;
+            document.getElementById('stat-comments').textContent = stats.comments ?? 0;
+            document.getElementById('stat-media').textContent = stats.media ?? 0;
+            document.getElementById('stat-skipped').textContent = stats.skipped ?? 0;
+        }
+
+        function updateProgress(data) {
+            const pct = data.progress?.overall_percent ?? 0;
+            bar.style.width = pct + '%';
+            bar.textContent = pct + '%';
+            overallPercent.textContent = pct + '%';
+            phaseLabel.textContent = data.phase_label ?? 'İşleniyor';
+            stepMessage.textContent = data.message ?? '';
+            updateStats(data.stats);
+        }
+
+        function showDone(data) {
+            running.classList.add('d-none');
+            done.classList.remove('d-none');
+            document.getElementById('wp-done-batch').textContent = data.batch_id ?? '';
+            const s = data.stats ?? {};
+            document.getElementById('wp-done-summary').innerHTML =
+                `<li>${s.posts ?? 0} makale, ${s.pages ?? 0} sayfa</li>` +
+                `<li>${s.categories ?? 0} kategori, ${s.tags ?? 0} etiket</li>` +
+                `<li>${s.comments ?? 0} yorum</li>` +
+                `<li>${s.media ?? 0} medya (${s.media_failed ?? 0} hata)</li>` +
+                `<li>${s.skipped ?? 0} atlandı</li>`;
+            if ((data.errors ?? []).length) {
+                addLog('Uyarı: ' + data.errors.length + ' hata oluştu.');
+            }
+        }
+
+        async function runStepLoop(jobId) {
+            currentJobId = jobId;
+            while (!cancelled) {
+                const fd = new FormData();
+                fd.append('_token', csrf);
+                const res = await fetch(stepUrl(jobId), { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!res.ok) {
+                    addLog('Hata: ' + (data.error ?? 'Bilinmeyen hata'));
+                    break;
+                }
+                addLog(data.message ?? 'Adım tamamlandı');
+                updateProgress(data);
+                if (data.done) {
+                    showDone(data);
+                    return;
+                }
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+
+        async function startImport() {
+            const total = {{ preview.data.preview.new_items|default(0) }};
+            if (!confirm(total + ' yeni içerik adım adım aktarılacak. Başlansın mı?')) return;
+
+            cancelled = false;
+            idle.classList.add('d-none');
+            running.classList.remove('d-none');
+            log.innerHTML = '';
+            addLog('İşlem başlatılıyor...');
+
+            const fd = new FormData();
+            fd.append('_token', csrf);
+            fd.append('chunk_size', document.getElementById('wp-chunk-size').value);
+            if (document.getElementById('wp-download-media').checked) {
+                fd.append('download_media', '1');
+            }
+
+            try {
+                const res = await fetch(startUrl, { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!res.ok) {
+                    addLog('Başlatma hatası: ' + (data.error ?? ''));
+                    idle.classList.remove('d-none');
+                    running.classList.add('d-none');
+                    return;
+                }
+                addLog(`Job başladı — ${data.total_posts} içerik, ${data.total_media} medya, batch: ${data.batch_id}`);
+                await runStepLoop(data.job_id);
+            } catch (e) {
+                addLog('Bağlantı hatası: ' + e.message);
+                idle.classList.remove('d-none');
+                running.classList.add('d-none');
+            }
+        }
+
+        document.getElementById('wp-import-start')?.addEventListener('click', startImport);
+
+        document.getElementById('wp-import-cancel')?.addEventListener('click', async function () {
+            if (!currentJobId || !confirm('İçe aktarma iptal edilecek ve bu batch geri alınacak. Emin misiniz?')) return;
+            cancelled = true;
+            const fd = new FormData();
+            fd.append('_token', csrf);
+            const res = await fetch(cancelUrl(currentJobId), { method: 'POST', body: fd });
+            const data = await res.json();
+            addLog(data.message ?? data.error ?? 'İptal edildi');
+            running.classList.add('d-none');
+            idle.classList.remove('d-none');
+        });
+
+        if (activeJobId) {
+            idle.classList.add('d-none');
+            running.classList.remove('d-none');
+            addLog('Devam eden iş bulundu, kaldığı yerden sürdürülüyor...');
+            runStepLoop(activeJobId);
+        }
+    })();
+    </script>
+    {% endif %}
+{% endblock %}

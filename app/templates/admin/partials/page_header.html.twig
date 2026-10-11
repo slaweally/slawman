@@ -1,0 +1,5 @@
+<div class="page-pretitle">Admin Panel</div>
+<h2 class="page-title mb-0">{% block page_title %}{% block title %}Admin{% endblock %}{% endblock %}</h2>
+{% if block('page_subtitle') is defined and block('page_subtitle')|trim is not empty %}
+    <div class="text-secondary mt-1">{% block page_subtitle %}{% endblock %}</div>
+{% endif %}

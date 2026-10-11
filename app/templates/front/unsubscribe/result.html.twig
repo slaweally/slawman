@@ -1,0 +1,18 @@
+{% extends 'front/layout/base.html.twig' %}
+
+{% block layout %}
+<div class="content-grid content-grid--full">
+    <div class="content-primary">
+        <section class="empty-state" style="max-width:520px;margin:2rem auto;">
+            {% if success %}
+                <p style="font-size:2rem;margin:0 0 .75rem;color:var(--color-terminal);"><i class="bi bi-check-circle"></i></p>
+            {% else %}
+                <p style="font-size:2rem;margin:0 0 .75rem;color:#f85149;"><i class="bi bi-exclamation-circle"></i></p>
+            {% endif %}
+            <h1 class="text-lg font-semibold mb-2">Abonelik</h1>
+            <p>{{ message }}</p>
+            <p class="mt-4"><a href="{{ path('front_home') }}" class="btn btn--primary btn--sm">Ana sayfaya dön</a></p>
+        </section>
+    </div>
+</div>
+{% endblock %}

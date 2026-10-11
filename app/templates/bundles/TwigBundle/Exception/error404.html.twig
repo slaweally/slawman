@@ -1,0 +1,37 @@
+{% extends 'front/layout/base.html.twig' %}
+{% block title %}Sayfa Bulunamadı{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex,follow">{% endblock %}
+{% block layout %}
+<div class="content-primary mx-auto max-w-lg py-16">
+    <div class="empty-state">
+        <h1 class="font-serif text-4xl text-primary mb-3">404</h1>
+        <p class="mb-6">Aradığınız sayfa bulunamadı veya taşınmış olabilir.</p>
+        <form action="{{ path('front_search') }}" method="get" class="mb-8" role="search">
+            <div class="input-group">
+                <input type="search" name="q" class="form-control" placeholder="Sitede ara..." aria-label="Sitede ara">
+                <button type="submit" class="btn-primary"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+        <a href="{{ path('front_home') }}" class="btn-primary">Anasayfaya dön</a>
+
+        {% set suggestions = get_sidebar_posts(6) %}
+        {% if suggestions|length %}
+            <div class="mt-10 text-left">
+                <h2 class="font-serif text-lg text-primary mb-4">Bunlar ilginizi çekebilir</h2>
+                <ul class="related-list">
+                    {% for item in suggestions %}
+                        <li class="related-list__item">
+                            <a href="{{ post_path(item) }}">
+                                <span class="related-body">
+                                    <span class="related-title">{{ item.title|default(item.slug) }}</span>
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block sidebar %}{% endblock %}

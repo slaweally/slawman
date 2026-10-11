@@ -1,0 +1,81 @@
+{# ── İçerik türü ikonları ── #}
+{% macro type_icon(type) %}
+    {% if type == 'note' %}<i class="bi bi-terminal"></i>
+    {% elseif type == 'article' %}<i class="bi bi-journal-code"></i>
+    {% elseif type == 'project' %}<i class="bi bi-box-seam"></i>
+    {% elseif type == 'software' %}<i class="bi bi-cpu"></i>
+    {% elseif type == 'snippet' %}<i class="bi bi-braces"></i>
+    {% elseif type == 'page' %}<i class="bi bi-file-earmark-text"></i>
+    {% elseif type == 'howto' %}<i class="bi bi-signpost-split"></i>
+    {% elseif type == 'troubleshoot' %}<i class="bi bi-bug"></i>
+    {% elseif type == 'comparison' %}<i class="bi bi-columns-gap"></i>
+    {% else %}<i class="bi bi-file-text"></i>
+    {% endif %}
+{% endmacro %}
+
+{# ── Tür şeridi (detay sayfaları) ── #}
+{% macro type_strip(type, extra) %}
+<div class="ctype-strip ctype-strip--{{ type }}">
+    <span class="ctype-strip__dot"></span>
+    <span class="ctype-strip__icon">{{ _self.type_icon(type) }}</span>
+    <span class="ctype-strip__label">{{ get_post_type_label(type) }}</span>
+    {% if extra %}<span class="ctype-strip__extra">{{ extra|raw }}</span>{% endif %}
+</div>
+{% endmacro %}
+
+{# ── Arşiv sayfası başlığı ── #}
+{% macro archive_header(type, title, description) %}
+<header class="archive-header archive-header--{{ type }}">
+    <div class="archive-header__strip">
+        <span class="archive-header__icon">{{ _self.type_icon(type) }}</span>
+        <span class="archive-header__path font-mono">~/{{ type }}/</span>
+    </div>
+    <h1 class="archive-header__title">{{ title }}</h1>
+    {% if description %}<p class="archive-header__desc">{{ description }}</p>{% endif %}
+</header>
+{% endmacro %}
+
+{# ── Breadcrumb ── #}
+{% macro breadcrumb(items) %}
+<nav class="breadcrumb" aria-label="Konum">
+    <ol class="breadcrumb__list">
+        <li><a href="{{ path('front_home') }}"><i class="bi bi-house"></i></a></li>
+        {% for item in items %}
+            <li>
+                {% if item.url is defined and item.url %}
+                    <a href="{{ item.url }}">{{ item.label }}</a>
+                {% else %}
+                    <span aria-current="page">{{ item.label }}</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+</nav>
+{% endmacro %}
+
+{# ── Panel başlığı ── #}
+{% macro panel_head(title, icon) %}
+<div class="panel-head">
+    {% if icon %}<span class="panel-head__icon"><i class="bi bi-{{ icon }}"></i></span>{% endif %}
+    <h2 class="panel-head__title">{{ title }}</h2>
+</div>
+{% endmacro %}
+
+{# ── Spec satırı (proje/yazılım meta) ── #}
+{% macro spec_row(label, value, icon) %}
+<div class="spec-row">
+    <span class="spec-row__label">{% if icon %}<i class="bi bi-{{ icon }}"></i>{% endif %} {{ label }}</span>
+    <span class="spec-row__value">{{ value|raw }}</span>
+</div>
+{% endmacro %}
+
+{# ── Terminal pencere chrome ── #}
+{% macro terminal_window(title, content) %}
+<div class="term-window">
+    <div class="term-window__bar">
+        <span class="term-window__dots"><i></i><i></i><i></i></span>
+        <span class="term-window__title font-mono">{{ title }}</span>
+    </div>
+    <div class="term-window__body">{{ content|raw }}</div>
+</div>
+{% endmacro %}

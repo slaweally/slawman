@@ -1,0 +1,12 @@
+{% extends 'front/layout/base.html.twig' %}
+{% block title %}Yetkisiz Erişim{% endblock %}
+{% block layout %}
+<div class="content-primary mx-auto max-w-lg py-16">
+    <div class="empty-state">
+        <h1 class="font-serif text-4xl text-primary mb-3">403</h1>
+        <p class="mb-6">Bu sayfaya erişim yetkiniz yok.</p>
+        <a href="{{ path('front_home') }}" class="btn-primary">Anasayfaya dön</a>
+    </div>
+</div>
+{% endblock %}
+{% block sidebar %}{% endblock %}

@@ -1,0 +1,10 @@
+# Alan adının kökü proje klasörünü gösteriyorsa her şeyi public/ içine yönlendirir.
+# En iyisi document root'u public/ yapmaktır; mümkün değilse bu dosya yeterlidir.
+Options -Indexes
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Hassas klasörlere doğrudan erişimi kapat
+    RewriteRule ^(app|slw-content|console|composer\.|symfony\.|\.env|\.git|\.claude) - [F,L,NC]
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

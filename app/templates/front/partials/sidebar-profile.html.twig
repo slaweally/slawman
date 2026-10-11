@@ -1,0 +1,31 @@
+{% set owner = site_owner() %}
+{% set socialLinks = (widget is defined and widget) ? widget.socialLinks : [] %}
+<div class="sidebar-profile">
+    <div class="sidebar-profile__avatar">
+        {% if owner and owner.avatar %}
+            <img src="{{ owner.avatar }}" alt="{{ owner.displayName }}" {{ lazy_attr()|raw }}>
+        {% else %}
+            <i class="fa-solid fa-terminal"></i>
+        {% endif %}
+    </div>
+    <h3 class="sidebar-profile__name">{{ owner ? owner.displayName : get_setting('site_title', 'Slaweally') }}</h3>
+    <p class="sidebar-profile__bio">{{ ((widget is defined and widget) ? widget.content : null)|default((owner ? owner.bio : null))|default(get_setting('site_description', 'Sysadmin & Yazılım Geliştirici')) }}</p>
+    {% if profile_stack_tags()|length %}
+    <div class="sidebar-profile__stack">
+        {% for tag in profile_stack_tags() %}
+            <span class="tag-pill tag-pill--sm">{{ tag }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if socialLinks|length %}
+    <div class="sidebar-profile__social-grid">
+        {% for link in socialLinks %}
+            {% if link.url is defined and link.url %}
+                <a href="{{ link.url }}" class="sidebar-profile__social-box" target="_blank" rel="noopener noreferrer" aria-label="{{ link.icon|default('link') }}">
+                    <i class="{{ link.icon|default('fa-solid fa-link') }}"></i>
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

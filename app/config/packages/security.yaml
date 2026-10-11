@@ -1,0 +1,55 @@
+security:
+    password_hashers:
+        App\Entity\User:
+            algorithm: sodium
+
+    role_hierarchy:
+        ROLE_SUPER_ADMIN: ROLE_ADMIN
+        ROLE_ADMIN: [ROLE_EDITOR, ROLE_AUTHOR, ROLE_CONTRIBUTOR, ROLE_USER]
+        ROLE_EDITOR: ROLE_AUTHOR
+        ROLE_AUTHOR: ROLE_CONTRIBUTOR
+        ROLE_CONTRIBUTOR: ROLE_USER
+
+    providers:
+        app_users:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        admin:
+            pattern: ^/%admin_prefix%
+            provider: app_users
+            custom_authenticator: App\Security\AdminAuthenticator
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
+            logout:
+                path: admin_logout
+                target: admin_login
+                invalidate_session: true
+
+        main:
+            lazy: true
+            provider: app_users
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+            logout:
+                path: app_logout
+
+    access_control:
+        - { path: ^/%admin_prefix%/login, roles: PUBLIC_ACCESS }
+        - { path: ^/%admin_prefix%/2fa, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS }
+        - { path: ^/%admin_prefix%, roles: ROLE_ADMIN }
+
+when@test:
+    security:
+        password_hashers:
+            App\Entity\User:
+                algorithm: sodium

@@ -1,0 +1,11 @@
+{% extends 'front/layout/base.html.twig' %}
+{% import 'front/macros/post.html.twig' as ui %}
+{% import 'front/macros/layout.html.twig' as layout %}
+{% block body %}
+{{ layout.archive_header('project', title, 'Geliştirdiğim projeler, açık kaynak çalışmalar ve altyapı projeleri.') }}
+<div class="card-grid card-grid--projects">
+{% for post in pagination %}{{ ui.project_card(post) }}
+{% else %}<div class="empty-state card-grid__empty"><p>Henüz proje eklenmemiş.</p></div>{% endfor %}
+</div>
+{{ knp_pagination_render(pagination) }}
+{% endblock %}

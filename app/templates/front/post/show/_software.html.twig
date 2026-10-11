@@ -1,0 +1,66 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{% set dl = post_meta(post, 'download_url') %}
+{% set src = post_meta(post, 'source_url') %}
+{% set version = post_meta(post, 'version') %}
+{% set distribution = post_meta(post, 'distribution') %}
+{% set license = post_meta(post, 'license') %}
+
+{{ layout.breadcrumb([
+    {url: path('front_software'), label: 'Yazılımlar'},
+    {label: post.title}
+]) }}
+
+<div class="product-hero">
+    <div class="product-hero__inner">
+        <div class="product-hero__icon"><i class="bi bi-cpu"></i></div>
+        <div class="product-hero__info">
+            <span class="product-hero__type font-mono">package</span>
+            <h1 class="product-hero__title">{{ post.title }}</h1>
+            <div class="product-hero__badges">
+                {% if version %}<span class="product-hero__version font-mono">v{{ version }}</span>{% endif %}
+                {% if distribution %}
+                    <span class="software-distribution software-distribution--{{ distribution }}">{{ software_distribution_label(distribution) }}</span>
+                {% endif %}
+            </div>
+            {% if post.excerpt %}<p class="product-hero__desc">{{ post.excerpt }}</p>{% endif %}
+        </div>
+        <div class="product-hero__actions">
+            {% if dl %}
+                <a href="{{ dl }}" class="btn btn--primary btn--lg" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-download"></i> İndir
+                </a>
+            {% endif %}
+            {% if src %}
+                <a href="{{ src }}" class="btn btn--ghost btn--lg" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-code-slash"></i> Kaynak
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="product-hero__meta">
+        {% if distribution %}{{ layout.spec_row('Dağıtım', software_distribution_label(distribution), 'box-seam') }}{% endif %}
+        {% if license %}{{ layout.spec_row('Lisans', license, 'shield-check') }}{% endif %}
+        {% if post.publishedAt %}{{ layout.spec_row('Yayın', post.publishedAt|date('d M Y'), 'calendar3') }}{% endif %}
+        {% if post.author %}{{ layout.spec_row('Geliştirici', post.author.username, 'person-workspace') }}{% endif %}
+    </div>
+</div>
+
+<div class="detail-panel detail-panel--software">
+    <section class="detail-section">
+        {{ layout.panel_head('Ürün Açıklaması', 'info-circle') }}
+        <div class="detail-body article-prose">{{ post.content|raw }}</div>
+    </section>
+
+    {% if post_meta(post, 'changelog') %}
+        <section class="detail-section">
+            <div class="term-window term-window--changelog">
+                <div class="term-window__bar">
+                    <span class="term-window__dots"><i></i><i></i><i></i></span>
+                    <span class="term-window__title font-mono">git log --oneline {{ post.slug }}</span>
+                </div>
+                <pre class="term-window__body term-window__body--log">{{ post_meta(post, 'changelog') }}</pre>
+            </div>
+        </section>
+    {% endif %}
+</div>

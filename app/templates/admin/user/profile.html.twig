@@ -1,0 +1,44 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Hesabım{% endblock %}
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Hesabım</li>
+    </ol>
+</nav>
+{% endblock %}
+{% block body %}
+<h2 class="mb-3">Hesabım</h2>
+<p class="text-muted">Giriş hesabınızın ve sitede görünen kişisel bilgilerinizin (profil resmi, bio, sosyal linkler) tek yönetim yeri.</p>
+<form method="post" enctype="multipart/form-data" class="card" id="admin-profile-form"
+      data-media-upload-url="{{ path('admin_media_upload_ajax') }}"
+      data-media-list-url="{{ path('admin_media_list_ajax') }}"
+      data-upload-token="{{ csrf_token('media_upload') }}">
+    <div class="card-body">
+        <input type="hidden" name="_token" value="{{ csrf_token('profile') }}">
+
+        {% include 'admin/partials/_media_asset_field.html.twig' with {
+            inputId: 'setting_avatar',
+            inputName: 'avatar',
+            previewId: 'profile-avatar-preview',
+            uploadName: 'avatar_file',
+            label: 'Profil Resmi',
+            value: user.avatar|default(''),
+            help: 'Site genelinde (sidebar, footer, e-postalar) sizi temsil eden görsel.',
+            accept: 'image/*'
+        } %}
+
+        <div class="mb-3"><label class="form-label">Görünen Ad</label><input name="display_name" class="form-control" value="{{ user.displayName }}" placeholder="{{ user.username }}"><div class="form-text">Sitede yazar/imza olarak gösterilir. Boş bırakılırsa kullanıcı adınız kullanılır.</div></div>
+        <div class="mb-3"><label class="form-label">Bio</label><textarea name="bio" class="form-control">{{ user.bio }}</textarea></div>
+        <div class="mb-3"><label class="form-label">Website</label><input name="website" class="form-control" value="{{ user.website }}"></div>
+        <div class="mb-3"><label class="form-label">GitHub</label><input name="github" class="form-control" value="{{ user.github }}"></div>
+        <div class="mb-3"><label class="form-label">Twitter</label><input name="twitter" class="form-control" value="{{ user.twitter }}"></div>
+        <div class="mb-3"><label class="form-label">LinkedIn</label><input name="linkedin" class="form-control" value="{{ user.linkedin }}"></div>
+        <div class="mb-3"><label class="form-label">Yetenek Etiketleri (virgülle)</label><input name="stack_tags" class="form-control" value="{{ user.stackTags }}" placeholder="Linux,PHP,DevOps"><div class="form-text">Sitenin profil kartında rozet olarak gösterilir.</div></div>
+        <div class="mb-3"><label class="form-label">Yeni Parola</label><input type="password" name="new_password" class="form-control"></div>
+        <button class="btn btn-primary">Kaydet</button>
+    </div>
+</form>
+{% include 'admin/post/_media_picker_modal.html.twig' %}
+{% endblock %}

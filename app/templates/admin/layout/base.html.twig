@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}Admin{% endblock %} · {{ get_setting('site_title', 'Site') }}</title>
+    {% if get_setting('site_favicon') %}
+        <link rel="icon" href="{{ get_setting('site_favicon') }}">
+    {% else %}
+        <link rel="icon" href="{{ path('front_favicon') }}">
+    {% endif %}
+    {% block stylesheets %}{{ encore_entry_link_tags('admin') }}{% endblock %}
+</head>
+{% set maintenanceReport = consume_maintenance_report() %}
+{% set currentRoute    = app.request.attributes.get('_route')|default('') %}
+{% set settingsOpen    = currentRoute starts with 'admin_settings_'
+                      or currentRoute starts with 'admin_menu_'
+                      or currentRoute starts with 'admin_widget_'
+                      or currentRoute starts with 'admin_seo_redirect_'
+                      or currentRoute == 'admin_user_profile' %}
+{% set pendingComments = pending_comments_count() %}
+{% set unreadMessages  = unread_messages_count() %}
+{% set securityAlerts24h = security_alerts_24h_count() %}
+
+<body class="admin-shell{{ maintenanceReport ? ' has-maintenance-report' : '' }}">
+
+{# ── Sidebar ─────────────────────────────────────────────────────── #}
+<aside class="adm-sidebar" id="adm-sidebar">
+
+    <a href="{{ path('admin_dashboard') }}" class="adm-sidebar__logo">
+        <div class="adm-sidebar__logo-mark">
+            {% if get_setting('site_logo') %}
+                <img src="{{ get_setting('site_logo') }}" alt="{{ get_setting('site_title', 'Site') }}" class="adm-sidebar__logo-img">
+            {% else %}
+                <span>{{ get_setting('site_title', 'S')|slice(0, 1)|upper }}</span>
+            {% endif %}
+        </div>
+        <div class="adm-sidebar__logo-text">
+            {{ get_setting('site_title', 'Site') }}
+            <small>Admin Panel</small>
+        </div>
+    </a>
+
+    <nav class="adm-sidebar__nav">
+
+        <div class="adm-sidebar__section-label">Genel</div>
+
+        <a href="{{ path('admin_dashboard') }}"
+           class="adm-sidebar__item {{ currentRoute == 'admin_dashboard' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </a>
+
+        <a href="{{ path('admin_analytics_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_analytics_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-chart-line"></i> Analitik
+        </a>
+
+        <div class="adm-sidebar__section-label">İçerik</div>
+
+        <a href="{{ path('admin_post_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_post_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-file-lines"></i> İçerikler
+        </a>
+
+        <a href="{{ path('admin_page_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_page_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-file"></i> Sayfalar
+        </a>
+
+        <a href="{{ path('admin_media_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_media_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-images"></i> Medya
+        </a>
+
+        <a href="{{ path('admin_category_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_category_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-folder-tree"></i> Kategoriler
+        </a>
+
+        <a href="{{ path('admin_tag_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_tag_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-tags"></i> Etiketler
+        </a>
+
+        <div class="adm-sidebar__section-label">Topluluk</div>
+
+        <a href="{{ path('admin_comment_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_comment_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-comments"></i> Yorumlar
+            {% if pendingComments > 0 %}
+                <span class="adm-sidebar__badge">{{ pendingComments > 99 ? '99+' : pendingComments }}</span>
+            {% endif %}
+        </a>
+
+        <a href="{{ path('admin_contact_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_contact_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-envelope"></i> Mesajlar
+            {% if unreadMessages > 0 %}
+                <span class="adm-sidebar__badge">{{ unreadMessages > 99 ? '99+' : unreadMessages }}</span>
+            {% endif %}
+        </a>
+
+        <a href="{{ path('admin_subscriber_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_subscriber_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-users"></i> Aboneler
+        </a>
+
+        <a href="{{ path('admin_tools_newsletter_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_tools_newsletter_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-envelope-open-text"></i> Bülten Gönder
+        </a>
+
+        <div class="adm-sidebar__section-label">Sistem</div>
+
+        {# Ayarlar accordion #}
+        <button
+            class="adm-sidebar__item adm-sidebar__item--toggle {{ settingsOpen ? 'is-active' : '' }}"
+            data-adm-toggle="nav-settings"
+            aria-expanded="{{ settingsOpen ? 'true' : 'false' }}"
+            type="button"
+        >
+            <i class="fa-solid fa-sliders"></i> Ayarlar
+            <i class="fa-solid fa-chevron-right adm-sidebar__chevron ms-auto"></i>
+        </button>
+        <div class="adm-sidebar__sub {{ settingsOpen ? 'is-open' : '' }}" id="nav-settings">
+            <a href="{{ path('admin_settings_index') }}"
+               class="adm-sidebar__sub-item {{ currentRoute == 'admin_settings_index' ? 'is-active' : '' }}">
+                Site Ayarları
+            </a>
+            <a href="{{ path('admin_menu_index') }}"
+               class="adm-sidebar__sub-item {{ currentRoute starts with 'admin_menu_' ? 'is-active' : '' }}">
+                Menüler
+            </a>
+            <a href="{{ path('admin_widget_index') }}"
+               class="adm-sidebar__sub-item {{ currentRoute starts with 'admin_widget_' ? 'is-active' : '' }}">
+                Widget'lar
+            </a>
+            <a href="{{ path('admin_seo_redirect_index') }}"
+               class="adm-sidebar__sub-item {{ currentRoute starts with 'admin_seo_redirect_' ? 'is-active' : '' }}">
+                SEO Redirect
+            </a>
+            <a href="{{ path('admin_user_profile') }}"
+               class="adm-sidebar__sub-item {{ currentRoute == 'admin_user_profile' ? 'is-active' : '' }}">
+                Hesabım
+            </a>
+        </div>
+
+        <a href="{{ path('admin_tools_index') }}"
+           class="adm-sidebar__item {{ currentRoute starts with 'admin_tools_' or currentRoute starts with 'admin_import_' or currentRoute starts with 'admin_system_' or currentRoute starts with 'admin_audit_' or currentRoute starts with 'admin_security_alert_' or currentRoute starts with 'admin_tracker_' ? 'is-active' : '' }}">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Araçlar
+            {% if securityAlerts24h > 0 %}
+                <span class="adm-sidebar__badge adm-sidebar__badge--danger">{{ securityAlerts24h > 99 ? '99+' : securityAlerts24h }}</span>
+            {% endif %}
+        </a>
+
+    </nav>
+
+    {# Sidebar footer: current user #}
+    <div class="adm-sidebar__footer">
+        <a href="{{ path('admin_user_profile') }}" class="adm-sidebar__user">
+            <div class="adm-sidebar__user-avatar">
+                {{ app.user.email|first|upper }}
+            </div>
+            <div class="adm-sidebar__user-info">
+                <div class="adm-sidebar__user-name">{{ app.user.email }}</div>
+                <div class="adm-sidebar__user-role">Yönetici</div>
+            </div>
+        </a>
+    </div>
+
+</aside>
+
+{# ── Sidebar backdrop (mobile) ────────────────────────────────────── #}
+<div class="adm-backdrop" id="adm-backdrop"></div>
+
+{# ── Main area ────────────────────────────────────────────────────── #}
+<div class="adm-main">
+
+    {# Top bar #}
+    <header class="adm-topbar">
+        <button class="adm-topbar__menu-btn" id="adm-menu-btn" aria-label="Menüyü aç" type="button">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <a href="{{ path('front_home') }}" class="adm-btn adm-btn--outline adm-btn--sm" target="_blank" rel="noopener">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Siteyi Gör
+        </a>
+
+        <div class="adm-topbar__title">
+            {% block page_title %}{% endblock %}
+            {% block page_subtitle %}{% endblock %}
+        </div>
+
+        <div class="adm-topbar__actions">
+            {% block page_actions %}{% endblock %}
+
+            <form method="post" action="{{ path('admin_settings_cache_clear') }}" class="d-inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('cache_clear') }}">
+                <button type="submit" class="adm-btn adm-btn--outline adm-btn--sm" data-confirm-message="Önbellek temizlensin ve sistem bakımı çalıştırılsın mı?">
+                    <i class="fa-solid fa-broom"></i> Bakım / Önbellek
+                </button>
+            </form>
+
+            <div class="dropdown">
+                <button class="adm-btn adm-btn--outline adm-btn--sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" type="button">
+                    <i class="fa-solid fa-circle-user"></i>
+                    {{ app.user.username|default(app.user.email|default('Admin')) }}
+                </button>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <a class="dropdown-item" href="{{ path('admin_user_profile') }}">Profil</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-danger" href="{{ path('admin_logout') }}">Çıkış</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {# Breadcrumb strip — only rendered when block has content #}
+    {% set breadcrumbContent %}{% block breadcrumb %}{% endblock %}{% endset %}
+    {% if breadcrumbContent|trim %}
+    <div class="adm-breadcrumb-bar">
+        {{ breadcrumbContent|raw }}
+    </div>
+    {% endif %}
+
+    {# Flash messages #}
+    {% include 'admin/partials/flashes.html.twig' %}
+
+    {# Page body #}
+    <main class="adm-content">
+        {% block body %}{% endblock %}
+    </main>
+
+</div>
+
+{# Maintenance report modal #}
+{% if maintenanceReport %}
+    {% include 'admin/partials/maintenance_report_modal.html.twig' with { maintenanceReport: maintenanceReport } %}
+{% endif %}
+
+{% block javascripts %}{{ encore_entry_script_tags('admin') }}{% endblock %}
+</body>
+</html>

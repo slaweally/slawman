@@ -1,0 +1,47 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Aboneler{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_tools_newsletter_index') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-envelope-open-text me-1"></i> Bülten Gönder</a>
+    <a href="{{ path('admin_subscriber_export') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download me-1"></i> CSV Export</a>
+{% endblock %}
+{% block body %}
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="post" action="{{ path('admin_subscriber_import') }}" enctype="multipart/form-data" class="row g-2 align-items-end">
+            <input type="hidden" name="_token" value="{{ csrf_token('subscriber_import') }}">
+            <div class="col-md-6">
+                <label class="form-label small mb-1">CSV Import</label>
+                <input type="file" name="csv" accept=".csv,.txt,text/csv" class="form-control form-control-sm" required>
+                <div class="form-text">Her satırda bir e-posta veya <code>email</code> başlıklı CSV.</div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-upload me-1"></i> İçe Aktar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table table-hover">
+            <thead>
+                <tr><th>E-posta</th><th>Aktif</th><th>Kayıt</th></tr>
+            </thead>
+            <tbody>
+            {% for s in pagination %}
+                <tr>
+                    <td>{{ s.email }}</td>
+                    <td><span class="badge {{ s.isActive ? 'bg-success-lt' : 'bg-secondary-lt' }}">{{ s.isActive ? 'Evet' : 'Hayır' }}</span></td>
+                    <td class="text-muted small">{{ s.subscribedAt|date('d.m.Y H:i') }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3" class="text-muted text-center py-4">Abone yok.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination.pageCount > 1 %}
+    <div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div>
+    {% endif %}
+</div>
+{% endblock %}

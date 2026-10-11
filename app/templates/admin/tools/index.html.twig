@@ -1,0 +1,64 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Araçlar{% endblock %}
+{% block page_subtitle %}Bakım, dışa/içe aktarım, izleme ve tanılama araçları{% endblock %}
+{% block body %}
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">Bakım &amp; Yapılandırma</div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-6"><a class="btn btn-light w-100 text-start" href="{{ path('admin_tools_maintenance') }}"><i class="fa-solid fa-broom me-2"></i>Sistem Bakım — Temizlik</a></div>
+                    <div class="col-md-6"><a class="btn btn-light w-100 text-start" href="{{ path('admin_tools_analytics') }}"><i class="fa-solid fa-chart-line me-2"></i>Analitik — Yandex Metrika</a></div>
+                    <div class="col-md-6"><a class="btn btn-light w-100 text-start" href="{{ path('admin_import_wordpress') }}"><i class="fa-brands fa-wordpress me-2"></i>WordPress İçe Aktarım</a></div>
+                    <div class="col-md-6"><a class="btn btn-light w-100 text-start" href="{{ path('admin_seo_redirect_index') }}"><i class="fa-solid fa-route me-2"></i>SEO Redirect</a></div>
+                    {% if is_granted('ROLE_SUPER_ADMIN') %}
+                        <div class="col-md-6"><a class="btn btn-light w-100 text-start" href="{{ path('admin_system_index') }}"><i class="fa-solid fa-server me-2"></i>Sistem Yönetimi (Super Admin)</a></div>
+                        <div class="col-md-6"><a class="btn btn-outline-danger w-100 text-start" href="{{ path('admin_tools_phpinfo') }}" target="_blank" rel="noopener"><i class="fa-solid fa-circle-info me-2"></i>PHPInfo (Super Admin)</a></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">İzleme &amp; Loglar</div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-6"><a class="btn btn-light w-100 text-start" href="{{ path('admin_audit_index') }}"><i class="fa-solid fa-clock-rotate-left me-2"></i>Audit Log</a></div>
+                    <div class="col-md-6">
+                        <a class="btn btn-light w-100 text-start" href="{{ path('admin_security_alert_index') }}">
+                            <i class="fa-solid fa-shield-halved me-2"></i>Güvenlik Alarmları
+                            {% if security_alerts_24h_count() > 0 %}
+                                <span class="badge bg-danger ms-1">{{ security_alerts_24h_count() > 99 ? '99+' : security_alerts_24h_count() }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="col-md-6"><a class="btn btn-light w-100 text-start" href="{{ path('admin_tracker_index') }}"><i class="fa-solid fa-satellite-dish me-2"></i>Takip Paneli</a></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">SSH Olmadan Build Deploy</div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Lokal bilgisayarda <code>npm run build</code> calistirin, sonra <code>public/build</code> klasorunu zipleyip buradan yukleyin.
+                </p>
+                <form method="post" action="{{ path('admin_tools_assets_deploy') }}" enctype="multipart/form-data" class="row g-3 align-items-end">
+                    <input type="hidden" name="_token" value="{{ csrf_token('deploy_assets') }}">
+                    <div class="col-md-8">
+                        <label class="form-label">Build ZIP Dosyasi</label>
+                        <input class="form-control" type="file" name="build_archive" accept=".zip,application/zip" required>
+                        <small class="text-muted d-block mt-1">ZIP iceriginde entrypoints.json ve manifest.json bulunmali (kokte veya build/ altinda).</small>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fa-solid fa-upload me-1"></i> Build'i Uygula
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% for widget in get_sidebar_widgets() %}
+    {% if widget.type == 'profile' %}
+        <div class="sidebar-widget sidebar-widget--profile">
+            {% include 'front/partials/sidebar-profile.html.twig' with { widget: widget } %}
+        </div>
+    {% elseif widget.type == 'recent' %}
+        <div class="sidebar-widget">
+            <h3 class="sidebar-widget__title font-mono">{{ widget.title|default('recent[]') }}</h3>
+            <ul class="sidebar-feed">
+                {% for post in get_sidebar_posts() %}
+                    <li class="sidebar-feed__item">
+                        <a href="{{ post_path(post) }}">
+                            <span class="type-badge type-badge--{{ post.type.value }} type-badge--sm">{{ get_post_type_label(post.type.value) }}</span>
+                            <span>{{ post.title|default(post.content|striptags|truncate(45)) }}</span>
+                        </a>
+                        <time>{{ post.publishedAt|time_ago }}</time>
+                    </li>
+                {% else %}
+                    <li class="text-sm text-muted">Henüz içerik yok.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% elseif widget.type == 'categories' %}
+        <div class="sidebar-widget">
+            <h3 class="sidebar-widget__title font-mono">{{ widget.title|default('categories[]') }}</h3>
+            <ul class="sidebar-feed sidebar-feed--cats">
+                {% for cat in get_sidebar_categories() %}
+                    <li><a href="{{ category_path(cat) }}"><i class="bi bi-chevron-right"></i> {{ cat.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% elseif widget.type == 'archive' %}
+        <a href="{{ path('front_archive') }}" class="sidebar-widget sidebar-widget--archive font-mono">
+            <i class="{{ widget.archiveIcon }}"></i>
+            <span>{{ widget.title|default('archive[]') }}</span>
+            <i class="bi bi-chevron-right sidebar-widget--archive__chevron"></i>
+        </a>
+    {% elseif widget.type == 'comments' %}
+        <div class="sidebar-widget">
+            <h3 class="sidebar-widget__title font-mono">{{ widget.title|default('comments[]') }}</h3>
+            <ul class="sidebar-feed sidebar-feed--comments">
+                {% for comment in get_recent_comments() %}
+                    <li class="sidebar-feed__item sidebar-feed__item--comment">
+                        <a href="{{ post_path(comment.post) }}#comments">
+                            <strong class="sidebar-comment__author">{{ comment.authorName }}</strong>
+                            <span class="sidebar-comment__excerpt">{{ comment.content|striptags|truncate(70) }}</span>
+                        </a>
+                        <time>{{ comment.createdAt|time_ago }}</time>
+                    </li>
+                {% else %}
+                    <li class="text-sm text-muted">Henüz onaylı yorum yok.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="sidebar-widget">
+            <h3 class="sidebar-widget__title font-mono">{{ widget.title }}</h3>
+            <div class="sidebar-widget__content text-sm text-text-muted">{{ widget.content|nl2br }}</div>
+        </div>
+    {% endif %}
+{% endfor %}

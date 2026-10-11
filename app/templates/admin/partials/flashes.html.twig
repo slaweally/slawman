@@ -1,0 +1,26 @@
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-dismissible d-flex align-items-start justify-content-between gap-3" role="alert">
+            <div class="flex-grow-1">
+                {% if message is iterable and message.text is defined %}
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span>{{ message.text }}</span>
+                        {% if message.viewUrl is defined %}
+                            <a href="{{ message.viewUrl }}"
+                               class="btn btn-sm btn-{{ label == 'success' ? 'success' : 'primary' }}"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> İçeriği gör
+                            </a>
+                        {% elseif label == 'success' %}
+                            <span class="text-muted small">(Taslak — sitede görünmez)</span>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    {{ message }}
+                {% endif %}
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+        </div>
+    {% endfor %}
+{% endfor %}

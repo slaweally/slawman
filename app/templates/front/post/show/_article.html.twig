@@ -1,0 +1,31 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{{ layout.breadcrumb([
+    {url: path('front_blog'), label: 'Blog'},
+    {label: post.title}
+]) }}
+
+{{ layout.type_strip('article', post.content|reading_time) }}
+
+<div class="detail-panel detail-panel--article">
+    <header class="detail-head">
+        <h1 class="detail-head__title">{{ post.title }}</h1>
+        {% include 'front/post/show/_meta.html.twig' %}
+    </header>
+
+    {% if post.featuredImage %}
+        <figure class="detail-hero">
+            {% set img = responsive_image(post.featuredImage) %}
+            <picture>
+                {% if img.webp_srcset %}<source type="image/webp" srcset="{{ img.webp_srcset }}" sizes="{{ img.sizes }}">{% endif %}
+                <img src="{{ post.featuredImage }}" alt="{{ post.title }}" loading="eager" fetchpriority="high">
+            </picture>
+        </figure>
+    {% endif %}
+
+    {% if post.excerpt %}
+        <div class="detail-lead">{{ post.excerpt }}</div>
+    {% endif %}
+
+    <div class="detail-body article-prose">{{ post.content|raw }}</div>
+</div>

@@ -1,0 +1,71 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}SEO Redirects{% endblock %}
+{% block body %}
+<div class="alert alert-info mb-3">
+    <strong>İpucu:</strong> Bilinen eski URL'ler (slug değişimi, WordPress taşıma vb.) buraya <strong>301</strong> ile eklenir — SEO için en doğru yöntem budur.
+    Tüm diğer 404'ler için <a href="{{ path('admin_settings_index', {tab: 'seo'}) }}">Ayarlar → SEO → 404 Yönlendirme</a> bölümünü kullanın.
+</div>
+<div class="card mb-3">
+    <div class="card-header">Yeni Redirect</div>
+    <div class="card-body">
+        <form method="post" action="{{ path('admin_seo_redirect_create') }}" class="row g-2">
+            <input type="hidden" name="_token" value="{{ csrf_token('seo_redirect') }}">
+            <div class="col-md-4">
+                <label class="form-label">Kaynak</label>
+                <input class="form-control" type="text" name="source_path" placeholder="/old-url" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Hedef</label>
+                <input class="form-control" type="text" name="target_path" placeholder="/new-url" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Kod</label>
+                <select class="form-select" name="status_code">
+                    <option value="301">301</option>
+                    <option value="302">302</option>
+                    <option value="307">307</option>
+                    <option value="308">308</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Redirect Listesi</div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+            <thead>
+                <tr>
+                    <th>Kaynak</th>
+                    <th>Hedef</th>
+                    <th>Kod</th>
+                    <th>Tarih</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in redirects %}
+                <tr>
+                    <td><code>{{ item.sourcePath }}</code></td>
+                    <td><code>{{ item.targetPath }}</code></td>
+                    <td>{{ item.statusCode }}</td>
+                    <td>{{ item.createdAt ? item.createdAt|date('d.m.Y H:i') : '-' }}</td>
+                    <td class="text-end">
+                        <form method="post" action="{{ path('admin_seo_redirect_delete', {id: item.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('seo_redirect_delete_' ~ item.id) }}">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5" class="text-muted">Redirect kaydı yok.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

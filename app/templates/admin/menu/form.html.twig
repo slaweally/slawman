@@ -1,0 +1,22 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}{{ isNew ? 'Yeni Menü' : 'Menü Düzenle' }}{% endblock %}
+{% block body %}
+<h2 class="mb-3">{{ isNew ? 'Yeni Menü Öğesi' : 'Menü Düzenle' }}</h2>
+<div class="card"><div class="card-body">
+    {{ form_start(form) }}
+    <div class="row">
+        <div class="col-md-6">{{ form_row(form.location) }}</div>
+        <div class="col-md-6">{{ form_row(form.sortOrder) }}</div>
+        <div class="col-md-6">{{ form_row(form.label) }}</div>
+        <div class="col-md-6">{{ form_row(form.url) }}</div>
+        <div class="col-md-6">{{ form_row(form.icon) }}</div>
+        <div class="col-md-6 d-flex align-items-end gap-3 pb-3">
+            {{ form_row(form.isActive) }}
+            {{ form_row(form.openInNewTab) }}
+        </div>
+    </div>
+    <button class="btn btn-primary">Kaydet</button>
+    <a href="{{ path('admin_menu_index') }}" class="btn btn-outline-secondary">İptal</a>
+    {{ form_end(form) }}
+</div></div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Kategoriler{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_category_new') }}" class="btn btn-primary btn-sm">Yeni</a>
+{% endblock %}
+{% block body %}
+<div class="card"><div class="table-responsive"><table class="table card-table">
+    <thead><tr><th>Ad</th><th>Slug</th><th>Sıra</th><th></th></tr></thead>
+    <tbody>
+    {% for cat in categories %}
+        <tr>
+            <td>{{ cat.name }}</td><td>{{ cat.slug }}</td><td>{{ cat.sortOrder }}</td>
+            <td>
+                <a href="{{ path('admin_category_edit', {id: cat.id}) }}" class="btn btn-sm">Düzenle</a>
+                <form method="post" action="{{ path('admin_category_delete', {id: cat.id}) }}" class="d-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ cat.id) }}">
+                    <button class="btn btn-sm btn-danger">Sil</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table></div></div>
+{% endblock %}

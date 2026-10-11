@@ -1,0 +1,12 @@
+{% extends 'front/layout/base.html.twig' %}
+{% block title %}Sunucu Hatası{% endblock %}
+{% block layout %}
+<div class="content-primary mx-auto max-w-lg py-16">
+    <div class="empty-state">
+        <h1 class="font-serif text-4xl text-primary mb-3">500</h1>
+        <p class="mb-6">Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+        <a href="{{ path('front_home') }}" class="btn-primary">Anasayfaya dön</a>
+    </div>
+</div>
+{% endblock %}
+{% block sidebar %}{% endblock %}

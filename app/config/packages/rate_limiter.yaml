@@ -1,0 +1,22 @@
+framework:
+    rate_limiter:
+        admin_login:
+            policy: fixed_window
+            limit: 5
+            interval: '15 minutes'
+        admin_actions:
+            policy: sliding_window
+            limit: 40
+            interval: '1 minute'
+        api_requests:
+            policy: sliding_window
+            limit: 100
+            interval: '1 minute'
+        contact_form:
+            policy: fixed_window
+            limit: 3
+            interval: '15 minutes'
+        comment_form:
+            policy: fixed_window
+            limit: 5
+            interval: '15 minutes'

@@ -1,0 +1,22 @@
+<div class="detail-meta">
+    <div class="detail-meta__row">
+        {% if post.publishedAt %}
+            <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|date('d M Y') }}</time>
+        {% endif %}
+        {% if post.author %}
+            <span class="detail-meta__sep">·</span>
+            <span><i class="bi bi-person-workspace"></i> {{ post.author.username }}</span>
+        {% endif %}
+        {% if post.type.value not in ['snippet', 'note'] %}
+            <span class="detail-meta__sep">·</span>
+            <span><i class="bi bi-clock"></i> {{ post.content|reading_time }}</span>
+        {% endif %}
+    </div>
+    {% if post.categories|length %}
+        <div class="detail-meta__cats">
+            {% for cat in post.categories %}
+                <a href="{{ category_path(cat) }}" class="tag-pill">{{ cat.name }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

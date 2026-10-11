@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ siteTitle }}</title>
+</head>
+<body style="margin:0;padding:0;background:#eef0f3;font-family:Inter,Segoe UI,Arial,sans-serif;color:#1c2128;line-height:1.6;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef0f3;padding:24px 12px;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #d8dce3;border-radius:8px;overflow:hidden;">
+                <tr>
+                    <td style="background:#0d1117;padding:20px 28px;">
+                        <a href="{{ siteUrl }}" style="color:#3fb950;text-decoration:none;font-family:JetBrains Mono,Consolas,monospace;font-size:14px;font-weight:600;">
+                            ~$ {{ siteAuthor }}
+                        </a>
+                        <div style="color:#848d97;font-size:12px;margin-top:4px;">{{ siteTitle }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:28px;">
+                        {% block email_body %}{% endblock %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px 24px;border-top:1px solid #d8dce3;background:#f8f9fb;">
+                        <p style="margin:0 0 8px;font-size:12px;color:#57606a;">
+                            © {{ year }} {{ siteAuthor }} · {{ siteTitle }}
+                        </p>
+                        <p style="margin:0;font-size:11px;color:#848d97;">
+                            Bu e-postayı bülten aboneliğiniz nedeniyle aldınız.
+                            <a href="{{ unsubscribeUrl }}" style="color:#2D5BE3;">Abonelikten çık</a>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

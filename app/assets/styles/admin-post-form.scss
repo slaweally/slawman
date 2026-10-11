@@ -1,0 +1,112 @@
+.post-title-input {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.img-preview {
+    width: 100%;
+    min-height: 72px;
+    border: 1px solid var(--tblr-border-color);
+    border-radius: 4px;
+    background: var(--tblr-bg-surface-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img {
+        width: 100%;
+        max-height: 160px;
+        object-fit: cover;
+    }
+}
+
+.img-preview-lg {
+    min-height: 120px;
+}
+
+#post-content-editor.font-monospace {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    min-height: 200px;
+}
+
+/* CKEditor 5 kapsayıcı genişliği/yüksekliği — min-height'ı editable yerine
+   sarmalayıcı .ck-editor__main'e veriyoruz; editable'ın kendisi odaklanma
+   (ck-focused) durum değişikliklerinde CKEditor'ın kendi CSS'i tarafından
+   sıfırlanabiliyor (min-height:unset), ama sarmalayıcı bundan etkilenmez. */
+.ck-editor {
+    width: 100%;
+}
+
+.ck.ck-editor__editable {
+    border-radius: 0 0 4px 4px;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.ck-editor__main.editor-min-h,
+.ck-editor__main.editor-min-h .ck-editor__editable {
+    min-height: 650px;
+}
+
+.ck-editor__main.editor-min-h--sm,
+.ck-editor__main.editor-min-h--sm .ck-editor__editable {
+    min-height: 280px;
+}
+
+/* Tom Select — Tabler görünümüne yakın görünüm */
+.ts-wrapper .ts-control {
+    border-radius: var(--tblr-border-radius, 4px);
+    min-height: calc(1.5em + 0.875rem + 2px);
+}
+
+.ts-wrapper.multi .ts-control > div {
+    background: var(--tblr-primary-lt, #e8f0fe);
+    color: var(--tblr-primary, #206bc4);
+    border-radius: 4px;
+}
+
+.media-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.5rem;
+}
+
+.media-pick {
+    border: 2px solid transparent;
+    border-radius: 4px;
+    padding: 0;
+    background: var(--tblr-bg-surface-secondary);
+    cursor: pointer;
+    aspect-ratio: 1;
+    overflow: hidden;
+    position: relative;
+
+    &:hover {
+        border-color: var(--tblr-primary);
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    span {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        font-size: 0.6rem;
+        padding: 2px 4px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+#post-tags-select {
+    min-height: 100px;
+}

@@ -1,0 +1,25 @@
+{% extends 'front/layout/base.html.twig' %}
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{% block layout %}
+<article class="content-primary ctype-detail ctype-detail--page max-w-3xl mx-auto">
+    {{ layout.breadcrumb([{label: page.title}]) }}
+    {{ layout.type_strip('page') }}
+    <div class="detail-panel detail-panel--page">
+        <header class="detail-head">
+            <h1 class="detail-head__title">{{ page.title }}</h1>
+        </header>
+        {% if page.featuredImage %}
+            {% set img = responsive_image(page.featuredImage) %}
+            <figure class="detail-hero">
+                <picture>
+                    {% if img.webp_srcset %}<source type="image/webp" srcset="{{ img.webp_srcset }}" sizes="{{ img.sizes }}">{% endif %}
+                    <img src="{{ page.featuredImage }}" alt="{{ page.title }}" loading="eager" fetchpriority="high">
+                </picture>
+            </figure>
+        {% endif %}
+        <div class="detail-body article-prose">{{ page.content|raw }}</div>
+    </div>
+</article>
+{% endblock %}
+{% block sidebar %}{% endblock %}

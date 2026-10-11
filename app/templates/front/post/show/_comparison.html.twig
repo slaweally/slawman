@@ -1,0 +1,114 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{% set sideA = post_meta(post, 'compare_side_a')|default('Taraf A') %}
+{% set sideB = post_meta(post, 'compare_side_b')|default('Taraf B') %}
+{% set sideASub = post_meta(post, 'compare_side_a_sub') %}
+{% set sideBSub = post_meta(post, 'compare_side_b_sub') %}
+{% set winner = post_meta(post, 'compare_winner', 'none') %}
+{% set verdict = post_meta(post, 'compare_verdict') %}
+{% set criteria = post_meta(post, 'compare_criteria')|compare_criteria_list %}
+
+{{ layout.breadcrumb([
+    {url: path('front_compare'), label: 'Karşılaştırmalar'},
+    {label: post.title}
+]) }}
+
+{{ layout.type_strip('comparison', sideA ~ ' vs ' ~ sideB) }}
+
+<div class="detail-panel detail-panel--comparison">
+    <header class="detail-head">
+        <h1 class="detail-head__title">{{ post.title }}</h1>
+        {% include 'front/post/show/_meta.html.twig' %}
+    </header>
+
+    {% if post.excerpt %}
+        <div class="detail-lead">{{ post.excerpt }}</div>
+    {% endif %}
+
+    <div class="compare-duel" aria-label="Karşılaştırılan taraflar">
+        <div class="compare-duel__side compare-duel__side--a{{ winner == 'a' ? ' compare-duel__side--winner' : '' }}">
+            {% if winner == 'a' %}<span class="compare-duel__badge"><i class="bi bi-trophy-fill"></i> Kazanan</span>{% endif %}
+            <h2 class="compare-duel__name">{{ sideA }}</h2>
+            {% if sideASub %}<p class="compare-duel__sub">{{ sideASub }}</p>{% endif %}
+        </div>
+        <div class="compare-duel__vs font-mono">vs</div>
+        <div class="compare-duel__side compare-duel__side--b{{ winner == 'b' ? ' compare-duel__side--winner' : '' }}">
+            {% if winner == 'b' %}<span class="compare-duel__badge"><i class="bi bi-trophy-fill"></i> Kazanan</span>{% endif %}
+            <h2 class="compare-duel__name">{{ sideB }}</h2>
+            {% if sideBSub %}<p class="compare-duel__sub">{{ sideBSub }}</p>{% endif %}
+        </div>
+    </div>
+
+    {% if criteria|length %}
+        <section class="compare-table-wrap" aria-labelledby="compare-table-heading">
+            <h2 id="compare-table-heading" class="compare-table-wrap__title">
+                <i class="bi bi-table"></i> Kriter Tablosu
+            </h2>
+            <div class="compare-table-scroll">
+                <table class="compare-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Kriter</th>
+                            <th scope="col">{{ sideA }}</th>
+                            <th scope="col">{{ sideB }}</th>
+                            <th scope="col">Kazanan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in criteria %}
+                            <tr>
+                                <th scope="row">{{ row.label }}</th>
+                                <td>{{ row.a }}</td>
+                                <td>{{ row.b }}</td>
+                                <td>
+                                    {% if row.winner == 'a' %}
+                                        <span class="compare-table__winner compare-table__winner--a">{{ sideA }}</span>
+                                    {% elseif row.winner == 'b' %}
+                                        <span class="compare-table__winner compare-table__winner--b">{{ sideB }}</span>
+                                    {% elseif row.winner == 'tie' %}
+                                        <span class="compare-table__winner compare-table__winner--tie">Berabere</span>
+                                    {% else %}
+                                        <span class="compare-table__winner compare-table__winner--none">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
+    {% if verdict or winner != 'none' %}
+        <aside class="compare-verdict{{ winner == 'tie' ? ' compare-verdict--tie' : '' }}" aria-label="Sonuç">
+            <div class="compare-verdict__head">
+                <i class="bi bi-flag-fill"></i>
+                <span>Sonuç</span>
+                {% if winner != 'none' and winner != 'tie' %}
+                    <strong>{{ compare_winner_label(winner) }}: {{ winner == 'a' ? sideA : sideB }}</strong>
+                {% elseif winner == 'tie' %}
+                    <strong>Berabere</strong>
+                {% endif %}
+            </div>
+            {% if verdict %}
+                <p class="compare-verdict__text">{{ verdict }}</p>
+            {% endif %}
+        </aside>
+    {% endif %}
+
+    {% if post.featuredImage %}
+        <figure class="detail-hero">
+            {% set img = responsive_image(post.featuredImage) %}
+            <picture>
+                {% if img.webp_srcset %}<source type="image/webp" srcset="{{ img.webp_srcset }}" sizes="{{ img.sizes }}">{% endif %}
+                <img src="{{ post.featuredImage }}" alt="{{ post.title }}" loading="eager" fetchpriority="high">
+            </picture>
+        </figure>
+    {% endif %}
+
+    <div class="compare-analysis-header">
+        <h2><i class="bi bi-journal-text"></i> Detaylı Analiz</h2>
+    </div>
+
+    <div class="detail-body compare-prose">{{ post.content|raw }}</div>
+</div>

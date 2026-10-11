@@ -1,0 +1,438 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+{# ── Top bar ──────────────────────────────────────────────────────── #}
+<header class="adm-topbar">
+    <div class="adm-topbar__title">
+        Dashboard
+        <small>{{ 'now'|date('d.m.Y') }} · {{ 'now'|date('H:i') }}</small>
+    </div>
+    <div class="adm-topbar__actions">
+        <a href="{{ path('admin_analytics_index') }}" class="adm-btn adm-btn--outline adm-btn--sm">
+            <i class="fa-solid fa-chart-line"></i> İstatistikler
+        </a>
+        <a href="{{ path('admin_post_new') }}" class="adm-btn adm-btn--primary adm-btn--sm">
+            <i class="fa-solid fa-plus"></i> Yeni İçerik
+        </a>
+    </div>
+</header>
+
+{# ── Page content ─────────────────────────────────────────────────── #}
+<main class="adm-content">
+
+    {# ── Stat cards ──────────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="adm-stat adm-stat--blue">
+                <div class="adm-stat__accent"></div>
+                <div class="adm-stat__icon"><i class="fa-solid fa-newspaper"></i></div>
+                <div class="adm-stat__value" data-count-to="{{ postCount }}">{{ postCount }}</div>
+                <div class="adm-stat__label">Toplam İçerik</div>
+                <a href="{{ path('admin_post_index') }}" class="adm-stat__link">
+                    Tümünü gör <i class="fa-solid fa-arrow-right fa-xs"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="adm-stat adm-stat--amber">
+                <div class="adm-stat__accent"></div>
+                <div class="adm-stat__icon"><i class="fa-solid fa-comments"></i></div>
+                <div class="adm-stat__value" data-count-to="{{ pendingComments }}">{{ pendingComments }}</div>
+                <div class="adm-stat__label">Bekleyen Yorum</div>
+                <a href="{{ path('admin_comment_index', {status: 'pending'}) }}" class="adm-stat__link">
+                    Moderasyona git <i class="fa-solid fa-arrow-right fa-xs"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="adm-stat adm-stat--green">
+                <div class="adm-stat__accent"></div>
+                <div class="adm-stat__icon"><i class="fa-solid fa-users"></i></div>
+                <div class="adm-stat__value" data-count-to="{{ visitorStats.today_unique_visitors }}">{{ visitorStats.today_unique_visitors }}</div>
+                <div class="adm-stat__label">Bugünkü Ziyaretçi</div>
+                <span class="adm-stat__link" style="color: var(--adm-muted);">
+                    {{ visitorStats.today_page_views }} görüntülenme
+                </span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="adm-stat adm-stat--red">
+                <div class="adm-stat__accent"></div>
+                <div class="adm-stat__icon"><i class="fa-solid fa-envelope"></i></div>
+                <div class="adm-stat__value" data-count-to="{{ unreadMessages }}">{{ unreadMessages }}</div>
+                <div class="adm-stat__label">Okunmamış Mesaj</div>
+                <a href="{{ path('admin_contact_index') }}" class="adm-stat__link">
+                    Mesajlara git <i class="fa-solid fa-arrow-right fa-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# ── Quick Note ──────────────────────────────────────────────── #}
+    <div class="adm-quick-note mb-4">
+        <div class="adm-quick-note__head">
+            <div>
+                <h3><i class="fa-solid fa-bolt text-primary me-1"></i> Hızlı Not</h3>
+                <p>Takım duyurusu veya kısa bir durum güncellemesi yayınlayın.</p>
+            </div>
+            <span class="adm-badge adm-badge--blue">Note</span>
+        </div>
+        <form
+            id="quick-note-form"
+            method="post"
+            action="{{ path('admin_quick_note') }}"
+            data-note-label="{{ get_post_type_label('note') }}"
+        >
+            <input type="hidden" name="_token" value="{{ csrf_token('quick_note') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-9">
+                    <textarea
+                        id="quick-note"
+                        name="content"
+                        class="adm-textarea"
+                        maxlength="250"
+                        rows="3"
+                        placeholder="Kısa bir not yazın (en fazla 250 karakter)…"
+                        required
+                    ></textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <span class="adm-quick-note__feedback small"></span>
+                        <span class="adm-char-count"><span>0</span>/250</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 d-flex flex-column gap-2">
+                    <button type="submit" class="adm-btn adm-btn--primary w-100">
+                        <i class="fa-solid fa-paper-plane"></i> Yayınla
+                    </button>
+                    <a href="{{ path('admin_post_new') }}" class="adm-btn adm-btn--outline w-100">
+                        <i class="fa-solid fa-file-circle-plus"></i> Tam editör
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# ── Traffic + System ────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Ziyaretçi Trafiği</h3>
+                    <span style="font-size:12px; color: var(--adm-muted);">
+                        {{ visitorStats.chart_month_label }} ·
+                        <strong>{{ visitorStats.month_unique_visitors }}</strong> ziyaretçi ·
+                        <strong>{{ visitorStats.month_page_views }}</strong> görüntülenme
+                    </span>
+                </div>
+                <div class="adm-card__body">
+                    <div class="adm-chart-wrap">
+                        <canvas id="dashboard-traffic-chart"
+                                data-labels='{{ visitorStats.chart|map(d => d.label)|json_encode|raw }}'
+                                data-visitors='{{ visitorStats.chart|map(d => d.unique_visitors)|json_encode|raw }}'
+                                data-views='{{ visitorStats.chart|map(d => d.page_views)|json_encode|raw }}'></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Sistem Durumu</h3>
+                </div>
+                <div class="adm-card__body" style="padding-bottom: 0;">
+                    <div class="adm-chart-wrap adm-chart-wrap--sm">
+                        <canvas id="dashboard-health-pie"
+                                data-labels='["Veritabanı","Önbellek","PHP Bellek"]'
+                                data-values="[{{ systemMetrics.db_size_bytes|default(0) }},{{ systemMetrics.cache_size_bytes|default(0) }},{{ (systemMetrics.php_mem_mb|default(0) * 1048576)|round(0, 'floor') }}]"></canvas>
+                    </div>
+                </div>
+                <ul class="adm-list">
+                    <li class="adm-list__item">
+                        <span class="adm-list__label"><span class="adm-dot" style="background:#4361EE;"></span> Veritabanı</span>
+                        <strong class="adm-list__value">{{ systemMetricsHuman.db }}</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label">DB yanıt</span>
+                        <strong class="adm-list__value">{{ systemMetrics.db_ping_ms }} ms</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label"><span class="adm-dot" style="background:#f59f00;"></span> Önbellek</span>
+                        <strong class="adm-list__value">{{ systemMetricsHuman.cache }}</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label"><span class="adm-dot" style="background:#2fb344;"></span> PHP bellek</span>
+                        <strong class="adm-list__value">{{ systemMetrics.php_mem_mb }} MB</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label">Cache katmanı</span>
+                        <strong class="adm-list__value">{{ systemMetrics.active_cache_systems|join(', ') }}</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label">Toplam Alan (Hosting)</span>
+                        <strong class="adm-list__value">{{ systemMetricsHuman.total_disk }}</strong>
+                    </li>
+                </ul>
+                <div class="adm-card__footer">
+                    <a href="{{ path('admin_tools_index') }}" class="adm-btn adm-btn--outline adm-btn--sm w-100">
+                        Araçlar ve ayarlar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Security + Performance widgets ───────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="adm-card h-100 {{ securityCritical24h > 0 ? 'border-danger' : '' }}">
+                <div class="adm-card__header">
+                    <h3><i class="fa-solid fa-shield-halved me-1"></i> Güvenlik Durumu</h3>
+                    {% if securityCritical24h > 0 %}
+                        <span class="adm-badge adm-badge--red">{{ securityCritical24h }} kritik</span>
+                    {% else %}
+                        <span class="adm-badge adm-badge--green">Sakin</span>
+                    {% endif %}
+                </div>
+                <div class="adm-card__body">
+                    <ul class="adm-list">
+                        <li class="adm-list__item">
+                            <span class="adm-list__label">Aktif banlı IP</span>
+                            <strong class="adm-list__value">{{ securityBannedIpCount }}</strong>
+                        </li>
+                        <li class="adm-list__item">
+                            <span class="adm-list__label">Son 24s kritik WAF alarmı</span>
+                            <strong class="adm-list__value" style="{{ securityCritical24h > 0 ? 'color: #c02525;' : '' }}">{{ securityCritical24h }}</strong>
+                        </li>
+                        <li class="adm-list__item">
+                            <span class="adm-list__label">Son 24s toplam alarm</span>
+                            <strong class="adm-list__value">{{ securityTotal24h }}</strong>
+                        </li>
+                    </ul>
+                </div>
+                <div class="adm-card__footer d-flex gap-2">
+                    <a href="{{ path('admin_security_alert_index') }}" class="adm-btn adm-btn--outline adm-btn--sm flex-fill">
+                        Alarmları Gör
+                    </a>
+                    <a href="{{ path('admin_settings_index', {tab: 'security'}) }}" class="adm-btn adm-btn--outline adm-btn--sm flex-fill">
+                        Banlı IP Ayarları
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="adm-card h-100 {{ trackerLogWarning ? 'border-danger' : '' }}">
+                <div class="adm-card__header">
+                    <h3><i class="fa-solid fa-gauge-high me-1"></i> Sistem Performansı</h3>
+                    {% if trackerLogWarning %}
+                        <span class="adm-badge adm-badge--red">Temizlik önerilir</span>
+                    {% else %}
+                        <span class="adm-badge adm-badge--green">Normal</span>
+                    {% endif %}
+                </div>
+                <div class="adm-card__body">
+                    <ul class="adm-list">
+                        <li class="adm-list__item">
+                            <span class="adm-list__label">Takip log satırı</span>
+                            <strong class="adm-list__value">{{ trackerLogCount|number_format(0, ',', '.') }}</strong>
+                        </li>
+                    </ul>
+                    {% if trackerLogWarning %}
+                        <div class="alert alert-danger small mb-0 mt-2">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                            Log tablosunda {{ (trackerLogCount / 1000)|round }}k+ satır birikti, temizlik önerilir.
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0 mt-2">
+                            Eşik: {{ trackerLogWarningThreshold|number_format(0, ',', '.') }} satır. Şu an sorun yok.
+                        </p>
+                    {% endif %}
+                </div>
+                <div class="adm-card__footer">
+                    <a href="{{ path('admin_tools_maintenance') }}" class="adm-btn adm-btn--outline adm-btn--sm w-100">
+                        Sistem Bakım / Temizlik
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Engagement + Storage ────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Etkileşim Dağılımı</h3>
+                    <span class="adm-badge adm-badge--green">Canlı</span>
+                </div>
+                <div class="adm-card__body">
+                    <div class="adm-chart-wrap">
+                        <canvas id="dashboard-engagement-chart"
+                                data-labels='["Bekleyen yorum","Okunmamış mesaj","Aboneler","İçerik"]'
+                                data-values='[{{ pendingComments }},{{ unreadMessages }},{{ subscriberCount }},{{ postCount }}]'></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Depolama Analizi</h3>
+                    <span style="font-size:12px; color: var(--adm-muted);">DB / Cache / Medya / Proje</span>
+                </div>
+                <div class="adm-card__body">
+                    <div class="adm-chart-wrap">
+                        <canvas id="dashboard-storage-chart"
+                                data-labels='["Veritabanı","Önbellek","Medya","Proje"]'
+                                data-values='[{{ systemMetrics.db_size_bytes }},{{ systemMetrics.cache_size_bytes }},{{ systemMetrics.media_size_bytes }},{{ systemMetrics.project_size_bytes }}]'></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Recent posts + Comments ──────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Son İçerikler</h3>
+                    <a href="{{ path('admin_post_index') }}" class="adm-btn adm-btn--ghost adm-btn--sm">Tümü →</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>Başlık</th>
+                                <th class="text-end">Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-recent-posts">
+                        {% for post in recentPosts %}
+                            <tr>
+                                <td>
+                                    <div class="adm-table__primary">
+                                        <a href="{{ path('admin_post_edit', {id: post.id}) }}">{{ post.title|default(post.slug)|truncate(48) }}</a>
+                                    </div>
+                                    <div class="adm-table__sub">{{ get_post_type_label(post.type.value) }}</div>
+                                </td>
+                                <td class="adm-table__meta text-end">{{ post.createdAt|date('d.m H:i') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="2" style="text-align:center; color: var(--adm-muted); padding: 24px;">
+                                    Henüz içerik yok.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Son Yorumlar</h3>
+                    <a href="{{ path('admin_comment_index') }}" class="adm-btn adm-btn--ghost adm-btn--sm">Tümü →</a>
+                </div>
+                {% for comment in recentComments %}
+                    <div class="adm-comment-item">
+                        <div class="adm-comment-item__author">{{ comment.authorName }}</div>
+                        <div class="adm-comment-item__body">{{ comment.content|striptags|truncate(80) }}</div>
+                        <div class="adm-comment-item__meta">{{ comment.createdAt|date('d.m.Y H:i') }}</div>
+                    </div>
+                {% else %}
+                    <div style="padding: 24px; text-align: center; color: var(--adm-muted);">Yorum yok.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Audit log + Popular ──────────────────────────────────────── #}
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Son İşlemler</h3>
+                    <a href="{{ path('admin_audit_index') }}" class="adm-btn adm-btn--ghost adm-btn--sm">Audit log →</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>İşlem</th>
+                                <th class="text-end">Zaman</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for log in auditLogs %}
+                            <tr>
+                                <td>
+                                    <div class="adm-audit-action">
+                                        <code>{{ log.action }}</code>
+                                        <span style="color: var(--adm-muted);">{{ log.entityType }} #{{ log.entityId }}</span>
+                                    </div>
+                                </td>
+                                <td class="adm-table__meta text-end">{{ log.createdAt|date('d.m H:i') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="2" style="text-align:center; color: var(--adm-muted); padding: 24px;">
+                                    Kayıt yok.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            {% if topViews|length or topComments|length %}
+            <div class="adm-card h-100">
+                <div class="adm-card__header">
+                    <h3>Popüler İçerik</h3>
+                    <a href="{{ path('admin_analytics_index') }}" class="adm-btn adm-btn--ghost adm-btn--sm">Analitik →</a>
+                </div>
+                {% for post in topViews|slice(0, 3) %}
+                    <div class="adm-popular-item">
+                        <a href="{{ path('admin_post_edit', {id: post.id}) }}">{{ post.title|default(post.slug)|truncate(38) }}</a>
+                        <span class="adm-badge adm-badge--blue">{{ post.viewCount }} görüntülenme</span>
+                    </div>
+                {% endfor %}
+                {% for item in topComments|slice(0, 3) %}
+                    <div class="adm-popular-item">
+                        <a href="{{ path('admin_post_edit', {id: item.post.id}) }}">{{ item.post.title|default(item.post.slug)|truncate(38) }}</a>
+                        <span class="adm-badge adm-badge--green">{{ item.count }} yorum</span>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="adm-card h-100">
+                <div class="adm-card__header"><h3>Özet</h3></div>
+                <ul class="adm-list">
+                    <li class="adm-list__item">
+                        <span class="adm-list__label">Medya dosyası</span>
+                        <strong class="adm-list__value">{{ mediaCount }}</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label">Abone</span>
+                        <strong class="adm-list__value">{{ subscriberCount }}</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label">Medya boyutu</span>
+                        <strong class="adm-list__value">{{ systemMetricsHuman.media }}</strong>
+                    </li>
+                    <li class="adm-list__item">
+                        <span class="adm-list__label">Proje boyutu</span>
+                        <strong class="adm-list__value">{{ systemMetricsHuman.project }}</strong>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</main>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{{ layout.breadcrumb([
+    {url: path('front_notes'), label: 'Notlar'},
+    {label: 'Not'}
+]) }}
+
+<div class="detail-panel detail-panel--note">
+    <div class="term-window term-window--note">
+        <div class="term-window__bar">
+            <span class="term-window__dots"><i></i><i></i><i></i></span>
+            <span class="term-window__title font-mono">~/notes/{{ post.publishedAt|date('Y-m-d') }}.log</span>
+            <span class="term-window__badge">NOT</span>
+        </div>
+        <div class="term-window__body term-window__body--note">
+            <p class="note-content">{{ post.content|striptags }}</p>
+        </div>
+        <div class="term-window__footer">
+            <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|date('d M Y, H:i') }}</time>
+            {% if post.author %}<span>· {{ post.author.username }}</span>{% endif %}
+            <a href="{{ post_path(post) }}" class="term-window__link">#{{ post.slug }}</a>
+        </div>
+    </div>
+</div>

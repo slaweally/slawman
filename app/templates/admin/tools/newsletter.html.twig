@@ -1,0 +1,263 @@
+{% extends 'admin/layout/base.html.twig' %}
+
+{% block title %}Abonelere E-posta Gönder{% endblock %}
+{% block page_subtitle %}SMTP üzerinden şablonlu toplu bülten ve duyuru maili{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_tools_index') }}">Araçlar</a></li>
+        <li class="breadcrumb-item active">Bülten Gönder</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block body %}
+{% if not smtpConfigured %}
+<div class="alert alert-warning">
+    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+    SMTP ayarları yapılandırılmamış.
+    <a href="{{ path('admin_settings_index', {tab: 'smtp'}) }}">Ayarlar → SMTP</a> bölümünden yapılandırın.
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-envelope-open-text me-1"></i> E-posta Oluştur
+            </div>
+            <div class="card-body">
+                <form id="newsletter-form" method="post">
+                    <div class="mb-3">
+                        <label class="form-label" for="template">Şablon</label>
+                        <select class="form-select" id="template" name="template" required>
+                            {% for tpl in templates %}
+                                <option value="{{ tpl.id }}" data-fields="{{ tpl.fields|join(',') }}" data-description="{{ tpl.description|e('html_attr') }}">
+                                    {{ tpl.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted d-block mt-1" id="template-description">{{ templates[0].description }}</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="subject">Konu</label>
+                        <input type="text" class="form-control" id="subject" name="subject" maxlength="200" placeholder="Boş bırakılırsa şablona göre otomatik oluşturulur">
+                    </div>
+
+                    <div class="newsletter-field" data-field="title">
+                        <div class="mb-3">
+                            <label class="form-label" for="title">Başlık</label>
+                            <input type="text" class="form-control" id="title" name="title" maxlength="200">
+                        </div>
+                    </div>
+
+                    <div class="newsletter-field" data-field="intro">
+                        <div class="mb-3">
+                            <label class="form-label" for="intro">Giriş metni</label>
+                            <textarea class="form-control" id="intro" name="intro" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="newsletter-field" data-field="body">
+                        <div class="mb-3">
+                            <label class="form-label" for="body">İçerik</label>
+                            <textarea class="form-control" id="body" name="body" rows="6"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="newsletter-field" data-field="body_html">
+                        <div class="mb-3">
+                            <label class="form-label" for="body_html">HTML İçerik</label>
+                            <textarea class="form-control font-monospace" id="body_html" name="body_html" rows="10" placeholder="<p>Merhaba...</p>"></textarea>
+                            <small class="text-muted">Temel HTML etiketleri desteklenir (p, a, strong, ul, li vb.).</small>
+                        </div>
+                    </div>
+
+                    <div class="newsletter-field" data-field="highlight">
+                        <div class="mb-3">
+                            <label class="form-label" for="highlight">Vurgu kutusu</label>
+                            <textarea class="form-control" id="highlight" name="highlight" rows="2" placeholder="Kısa ve dikkat çekici mesaj"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row newsletter-field" data-field="cta_text">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="cta_text">Buton metni</label>
+                            <input type="text" class="form-control" id="cta_text" name="cta_text" placeholder="Siteyi ziyaret et">
+                        </div>
+                        <div class="col-md-6 mb-3 newsletter-field" data-field="cta_url">
+                            <label class="form-label" for="cta_url">Buton URL</label>
+                            <input type="url" class="form-control" id="cta_url" name="cta_url" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <div class="newsletter-field" data-field="post_title">
+                        <div class="mb-3">
+                            <label class="form-label" for="post_title">İçerik başlığı</label>
+                            <input type="text" class="form-control" id="post_title" name="post_title">
+                        </div>
+                    </div>
+
+                    <div class="newsletter-field" data-field="post_excerpt">
+                        <div class="mb-3">
+                            <label class="form-label" for="post_excerpt">Kısa özet</label>
+                            <textarea class="form-control" id="post_excerpt" name="post_excerpt" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row newsletter-field" data-field="post_url">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label" for="post_url">İçerik URL</label>
+                            <input type="url" class="form-control" id="post_url" name="post_url" placeholder="https://...">
+                        </div>
+                        <div class="col-md-4 mb-3 newsletter-field" data-field="post_type">
+                            <label class="form-label" for="post_type">Tür etiketi</label>
+                            <input type="text" class="form-control" id="post_type" name="post_type" placeholder="Makale, Proje…">
+                        </div>
+                    </div>
+
+                    <div class="newsletter-field" data-field="digest_items">
+                        <div class="mb-3">
+                            <label class="form-label" for="digest_items">Özet maddeleri</label>
+                            <textarea class="form-control font-monospace" id="digest_items" name="digest_items" rows="8" placeholder="Başlık|https://ornek.com/yazi&#10;İkinci madde|https://...&#10;Sadece metin satırı"></textarea>
+                            <small class="text-muted">Her satır bir madde. Link için: <code>Başlık|URL</code></small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">Gönderim</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <form method="post" action="{{ path('admin_tools_newsletter_test') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('newsletter_test') }}">
+                            <div id="test-form-fields"></div>
+                            <label class="form-label" for="test_email">Test e-postası</label>
+                            <div class="input-group mb-2">
+                                <input type="email" class="form-control" id="test_email" name="test_email" value="{{ defaultTestEmail }}" required>
+                                <button type="submit" class="btn btn-outline-primary" {{ not smtpConfigured ? 'disabled' : '' }}>
+                                    <i class="fa-solid fa-paper-plane me-1"></i> Test Gönder
+                                </button>
+                            </div>
+                            <small class="text-muted">Önce kendinize test maili gönderin.</small>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <form method="post" action="{{ path('admin_tools_newsletter_send') }}" onsubmit="return confirm('{{ activeCount }} aktif aboneye e-posta gönderilecek. Emin misiniz?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('newsletter_send') }}">
+                            <div id="send-form-fields"></div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="confirm_send" value="1" id="confirm_send" required>
+                                <label class="form-check-label" for="confirm_send">
+                                    <strong>{{ activeCount }}</strong> aktif aboneye göndermeyi onaylıyorum
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100" {{ not smtpConfigured or activeCount == 0 ? 'disabled' : '' }}>
+                                <i class="fa-solid fa-users me-1"></i> Tüm Abonelere Gönder
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Önizleme</div>
+            <div class="card-body">
+                <p class="text-muted small">Şablonu doldurduktan sonra tarayıcıda önizleyin.</p>
+                <form method="post" action="{{ path('admin_tools_newsletter_preview') }}" target="_blank">
+                    <input type="hidden" name="_token" value="{{ csrf_token('newsletter_preview') }}">
+                    <div id="preview-form-fields"></div>
+                    <button type="submit" class="btn btn-light w-100">
+                        <i class="fa-solid fa-eye me-1"></i> Önizleme Aç
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">Şablonlar</div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for tpl in templates %}
+                        <li class="list-group-item">
+                            <strong>{{ tpl.label }}</strong>
+                            <div class="text-muted small">{{ tpl.description }}</div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">Aboneler</div>
+            <div class="card-body">
+                <p class="mb-2"><strong>{{ activeCount }}</strong> aktif abone</p>
+                <a href="{{ path('admin_subscriber_index') }}" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="fa-solid fa-users me-1"></i> Abone Listesi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const mainForm = document.getElementById('newsletter-form');
+    const templateSelect = document.getElementById('template');
+    const descriptionEl = document.getElementById('template-description');
+    const fieldBlocks = document.querySelectorAll('.newsletter-field');
+    const syncTargets = ['preview-form-fields', 'test-form-fields', 'send-form-fields'];
+
+    function activeFields() {
+        const option = templateSelect.selectedOptions[0];
+        return (option?.dataset.fields || '').split(',').filter(Boolean);
+    }
+
+    function toggleFields() {
+        const allowed = new Set(activeFields());
+        fieldBlocks.forEach((block) => {
+            const name = block.dataset.field;
+            block.style.display = allowed.has(name) ? '' : 'none';
+        });
+        const option = templateSelect.selectedOptions[0];
+        if (option && descriptionEl) {
+            descriptionEl.textContent = option.dataset.description || '';
+        }
+    }
+
+    function syncHiddenFields() {
+        const data = new FormData(mainForm);
+        syncTargets.forEach((targetId) => {
+            const container = document.getElementById(targetId);
+            if (!container) return;
+            container.innerHTML = '';
+            for (const [key, value] of data.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                container.appendChild(input);
+            }
+        });
+    }
+
+    templateSelect.addEventListener('change', () => {
+        toggleFields();
+        syncHiddenFields();
+    });
+
+    mainForm.addEventListener('input', syncHiddenFields);
+    toggleFields();
+    syncHiddenFields();
+})();
+</script>
+{% endblock %}

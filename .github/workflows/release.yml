@@ -1,0 +1,28 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.4', tools: composer }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - run: composer install --no-dev --optimize-autoloader --no-interaction
+      - run: npm ci && npm run build
+        working-directory: app
+      - name: Zip
+        run: |
+          mkdir -p slw-content/{cache,log,sessions,uploads,tmp,import-temp,import-jobs,backup,share}
+          zip -rq slawman-${{ github.ref_name }}.zip . \
+            -x '.git/*' '.github/*' '.claude/*' 'app/node_modules/*' 'app/tests/*' '.env.local' '.env.test' '.env.dev' \
+               'slw-content/cache/*' 'slw-content/log/*' 'slw-content/sessions/*' '*.phpunit.result.cache'
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: slawman-${{ github.ref_name }}.zip
+          generate_release_notes: true

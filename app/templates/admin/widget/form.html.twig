@@ -1,0 +1,48 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}{{ isNew ? 'Yeni Widget' : 'Widget Düzenle' }}{% endblock %}
+{% block body %}
+<h2 class="mb-3">{{ isNew ? 'Yeni Widget' : 'Widget Düzenle' }}</h2>
+<div class="card"><div class="card-body">
+    {{ form_start(form) }}
+    {{ form_row(form.title) }}
+    {{ form_row(form.type, {attr: {'data-widget-type-select': true}}) }}
+    {{ form_row(form.content) }}
+
+    <div class="mb-3" data-widget-archive-icon {{ form.vars.data.type == 'archive' ? '' : 'hidden' }}>
+        {{ form_row(form.archiveIcon) }}
+        <div class="form-text">Örn: <code>fas fa-archive</code>, <code>fas fa-folder-open</code>. Bu widget sidebar'da tek tıkla <code>/arsiv</code> sayfasına yönlendiren bir buton olarak görünür.</div>
+    </div>
+
+    <div class="mb-3" data-widget-social-links {{ form.vars.data.type == 'profile' ? '' : 'hidden' }}>
+        <label class="form-label">{{ form.socialLinks.vars.label }}</label>
+        <div data-collection-holder
+             data-prototype-icon="{{ form_widget(form.socialLinks.vars.prototype.icon)|e('html_attr') }}"
+             data-prototype-url="{{ form_widget(form.socialLinks.vars.prototype.url)|e('html_attr') }}"
+             data-index="{{ form.socialLinks|length }}">
+            {% for link in form.socialLinks %}
+                <div class="row g-2 align-items-start mb-2" data-collection-item>
+                    <div class="col-md-5">{{ form_widget(link.icon) }}</div>
+                    <div class="col-md-6">{{ form_widget(link.url) }}</div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-collection-remove>
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm" data-collection-add>
+            <i class="bi bi-plus-lg me-1"></i> Sosyal Link Ekle
+        </button>
+        <div class="form-text">İkon sınıfı için FontAwesome kullanın (örn. <code>fa-brands fa-github</code>). Yalnızca "Profil Kartı" widget türünde gösterilir.</div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">{{ form_row(form.sortOrder) }}</div>
+        <div class="col-md-6">{{ form_row(form.isActive) }}</div>
+    </div>
+    <button class="btn btn-primary">Kaydet</button>
+    <a href="{{ path('admin_widget_index') }}" class="btn btn-outline-secondary">İptal</a>
+    {{ form_end(form) }}
+</div></div>
+{% endblock %}

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+
+<html lang="tr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% set siteTitle = get_setting('site_title', 'Site') %}
+
+    {% set siteLogo = get_setting('site_logo') %}
+
+    {% set siteFavicon = get_setting('site_favicon') %}
+
+    <title>Backstage Giriş — {{ siteTitle }}</title>
+
+    {% if siteFavicon %}
+
+        <link rel="icon" href="{{ siteFavicon }}">
+
+    {% else %}
+
+        <link rel="icon" href="{{ path('front_favicon') }}">
+
+    {% endif %}
+
+    {{ encore_entry_link_tags('admin') }}
+
+</head>
+
+<body class="d-flex flex-column bg-dark-lt">
+
+<div class="page page-center min-vh-100">
+
+    <div class="container container-tight py-5">
+
+        <div class="text-center mb-4">
+
+            <a href="{{ path('front_home') }}" class="navbar-brand navbar-brand-autodark fs-2 fw-bold text-primary d-inline-flex align-items-center gap-2 justify-content-center text-decoration-none">
+
+                {% if siteLogo %}
+
+                    <img src="{{ siteLogo }}" alt="{{ siteTitle }}" style="height:40px;width:auto;">
+
+                {% endif %}
+
+                <span>{{ siteTitle }}</span>
+
+            </a>
+
+            <p class="text-secondary mt-2 mb-0">Backstage yönetim paneline güvenli giriş</p>
+
+        </div>
+
+        <div class="card card-md shadow-sm border-0">
+
+            <div class="card-body p-4 p-md-5">
+
+                <h1 class="h2 text-center mb-1">Yönetici Girişi</h1>
+
+                <p class="text-secondary text-center mb-4">Lütfen hesap bilgilerinizle devam edin.</p>
+
+
+
+                {% if error %}
+
+                    <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+
+                {% endif %}
+
+
+
+                <form method="post" autocomplete="on" novalidate>
+
+                    <div class="mb-3">
+
+                        <label class="form-label">E-posta veya kullanıcı adı</label>
+
+                        <input type="text" name="_email" class="form-control form-control-lg" value="{{ last_username }}" required autofocus autocomplete="username">
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label">Parola</label>
+
+                        <input type="password" name="_password" class="form-control form-control-lg" required autocomplete="current-password">
+
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+
+
+                    {% if turnstile_enabled() %}
+
+                        <div class="mb-3 d-flex justify-content-center">
+
+                            <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key() }}"></div>
+
+                        </div>
+
+                    {% endif %}
+
+
+
+                    <div class="form-footer">
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Backstage'e Giriş Yap</button>
+
+                    </div>
+
+                </form>
+
+
+
+                <div class="text-center mt-4">
+
+                    <a href="{{ path('front_home') }}" class="text-secondary text-decoration-none">Siteye geri dön</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% if turnstile_enabled() %}
+
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+{% endif %}
+
+</body>
+
+</html>
+
+

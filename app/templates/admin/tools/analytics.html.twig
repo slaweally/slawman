@@ -1,0 +1,148 @@
+{% extends 'admin/layout/base.html.twig' %}
+
+{% block title %}Analitik — Yandex Metrika{% endblock %}
+{% block page_subtitle %}Yandex Metrika bağlantısı ve site istatistikleri{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_tools_index') }}">Araçlar</a></li>
+        <li class="breadcrumb-item active">Analitik</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-brands fa-yandex-international me-1"></i> Yandex Metrika Ayarları
+                {% if isAuthorized %}
+                    <span class="badge bg-green-lt text-green ms-2">Bağlı <i class="fa-solid fa-check ms-1"></i></span>
+                {% else %}
+                    <span class="badge bg-red-lt text-red ms-2">Bağlı Değil</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if not isAuthorized %}
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body py-3">
+                            <h3 class="h6 mb-2">Yandex Metrika Hesabına Bağlan</h3>
+                            <p class="text-muted small mb-3">
+                                Aşağıdaki bağlantıya tıklayıp Yandex hesabınızla yetkilendirin, ardından size verilen
+                                yetkilendirme kodunu buraya yapıştırın.
+                            </p>
+                            <a href="{{ oauthAuthorizeUrl }}" target="_blank" rel="noopener" class="btn btn-outline-primary mb-3">
+                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Yandex'te Yetkilendir
+                            </a>
+                            <form method="post" action="{{ path('admin_tools_analytics_authorize') }}" class="row g-3 align-items-end">
+                                <input type="hidden" name="_token" value="{{ csrf_token('tools_analytics_authorize') }}">
+                                <div class="col-md-8">
+                                    <label class="form-label" for="confirmation_code">Yetkilendirme Kodu</label>
+                                    <input type="text" class="form-control" id="confirmation_code" name="confirmation_code" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fa-solid fa-link me-1"></i> Bağlan
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{{ path('admin_tools_analytics_save') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('tools_analytics') }}">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="metrika_enabled" value="1"{{ settings.metrika_enabled in ['true', '1'] ? ' checked' : '' }}>
+                                <span class="form-check-label">Yandex Metrika Aktif</span>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="metrika_counter_id">Sayaç (Site)</label>
+                            {% if isAuthorized and counters|length %}
+                                <select class="form-select" id="metrika_counter_id" name="metrika_counter_id">
+                                    <option value="">— Seçiniz —</option>
+                                    {% for counter in counters %}
+                                        <option value="{{ counter.id }}"{{ settings.metrika_counter_id == counter.id ? ' selected' : '' }}>
+                                            {{ counter.site }} (#{{ counter.id }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted d-block mt-1">Yandex hesabınızdaki {{ counters|length }} sayaçtan biri.</small>
+                            {% else %}
+                                <input type="text" class="form-control" id="metrika_counter_id" name="metrika_counter_id" value="{{ settings.metrika_counter_id }}" placeholder="Sayaç ID">
+                                {% if isAuthorized %}
+                                    <small class="text-muted d-block mt-1">Sayaç listesi alınamadı, ID'yi elle girebilirsiniz.</small>
+                                {% else %}
+                                    <small class="text-muted d-block mt-1">Sayaç listesini görmek için önce Yandex hesabınızı bağlayın.</small>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="metrika_webvisor" value="1"{{ settings.metrika_webvisor in ['true', '1'] ? ' checked' : '' }}>
+                                <span class="form-check-label">Webvisor</span>
+                            </label>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="metrika_clickmap" value="1"{{ settings.metrika_clickmap in ['true', '1'] ? ' checked' : '' }}>
+                                <span class="form-check-label">Tıklama Haritası</span>
+                            </label>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="metrika_tracklinks" value="1"{{ settings.metrika_tracklinks in ['true', '1'] ? ' checked' : '' }}>
+                                <span class="form-check-label">Link Takibi</span>
+                            </label>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="metrika_accurate_track" value="1"{{ settings.metrika_accurate_track in ['true', '1'] ? ' checked' : '' }}>
+                                <span class="form-check-label">Hassas Hemen Çıkma</span>
+                            </label>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="metrika_track_hash" value="1"{{ settings.metrika_track_hash in ['true', '1'] ? ' checked' : '' }}>
+                                <span class="form-check-label">URL Hash Takibi</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Ayarları Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                Site İstatistik Özeti
+                <a href="{{ path('admin_analytics_metrika') }}" class="small float-end">Yandex Metrika Detayı →</a>
+            </div>
+            <div class="card-body">
+                <ul class="dash-type-list">
+                    <li><span>Bugün ziyaretçi</span><strong>{{ dashboardStats.today_unique_visitors }}</strong></li>
+                    <li><span>Bugün görüntülenme</span><strong>{{ dashboardStats.today_page_views }}</strong></li>
+                    <li><span>7 gün ziyaretçi</span><strong>{{ dashboardStats.week_unique_visitors }}</strong></li>
+                    <li><span>7 gün görüntülenme</span><strong>{{ dashboardStats.week_page_views }}</strong></li>
+                    <li><span>Bu ay ziyaretçi</span><strong>{{ dashboardStats.month_unique_visitors }}</strong></li>
+                    <li><span>Bu ay görüntülenme</span><strong>{{ dashboardStats.month_page_views }}</strong></li>
+                    <li><span>Toplam görüntülenme</span><strong>{{ dashboardStats.totals.page_views }}</strong></li>
+                    <li><span>Toplam ziyaretçi</span><strong>{{ dashboardStats.totals.unique_visitors }}</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

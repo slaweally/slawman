@@ -1,0 +1,356 @@
+{% extends 'admin/layout/base.html.twig' %}
+
+{% set typeVal = post.type.value %}
+
+{% macro block_visible(types, current) %}
+    {% if current not in types %}d-none{% endif %}
+{% endmacro %}
+{% import _self as ui %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+    {{ encore_entry_link_tags('admin_post_form') }}
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item">
+            {% if typeVal == 'page' %}
+                <a href="{{ path('admin_page_index') }}">Sayfalar</a>
+            {% else %}
+                <a href="{{ path('admin_post_index') }}">İçerikler</a>
+            {% endif %}
+        </li>
+        <li class="breadcrumb-item active">{{ isNew ? 'Yeni içerik' : (post.title|default('Düzenle')) }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="mb-3">
+    <h1 class="h2 mb-0">
+        {% if typeVal == 'page' %}
+            {{ isNew ? 'Yeni Sayfa' : 'Sayfayı Düzenle' }}
+        {% else %}
+            {{ isNew ? 'Yeni İçerik' : 'İçeriği Düzenle' }}
+        {% endif %}
+    </h1>
+    {% if typeVal == 'page' %}
+        <p class="text-muted small mb-0">Yayınlandığında <code>/sayfa/slug</code> adresinde görünür.</p>
+    {% endif %}
+</div>
+
+<script type="application/json" id="post-type-config">{{ postTypeConfig|json_encode(constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_HEX_TAG'))|raw }}</script>
+<script type="application/json" id="post-form-blocks">{{ postFormBlocks|json_encode(constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_HEX_TAG'))|raw }}</script>
+
+{{ form_start(form, {
+    multipart: true,
+    attr: {
+        class: 'post-editor-form',
+        id: 'post-editor-form',
+        'data-media-upload-url': path('admin_media_upload_ajax'),
+        'data-software-upload-url': path('admin_media_upload_ajax', {software: 1}),
+        'data-tinymce-upload-url': path('admin_media_upload_ajax', {tinymce: 1}),
+        'data-upload-token': csrf_token('media_upload'),
+        'data-media-list-url': path('admin_media_list_ajax'),
+        'data-tag-search-url': path('admin_tag_search'),
+        'data-tag-create-url': path('admin_tag_create_ajax'),
+        'data-tag-create-token': csrf_token('tag_create'),
+    }
+}) }}
+
+<div class="row g-4">
+    {# SOL — içerik #}
+    <div class="col-lg-8">
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['article','page','project','software','snippet','howto','troubleshoot','comparison'], typeVal) }}" data-post-block="title">
+            <div class="card-body">
+                {{ form_widget(form.title, {attr: {class: 'form-control form-control-lg post-title-input', placeholder: 'Başlık'}}) }}
+                {{ form_errors(form.title) }}
+                <div class="mt-2 small text-muted">
+                    Slug: {{ form_widget(form.slug, {attr: {class: 'form-control form-control-sm d-inline-block', style: 'max-width:280px', placeholder: 'otomatik'}}) }}
+                    {{ form_errors(form.slug) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['snippet'], typeVal) }}" data-post-block="snippet-lang">
+            <div class="card-header">Kod Dili</div>
+            <div class="card-body py-3">{{ form_row(form.programmingLanguage) }}</div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['howto'], typeVal) }}" data-post-block="howto">
+            <div class="card-header">Nasıl Yapılır Bilgileri</div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">{{ form_row(form.difficulty) }}</div>
+                <div class="col-md-8">{{ form_row(form.estimatedTime) }}</div>
+                <div class="col-12">{{ form_row(form.prerequisites) }}</div>
+                <div class="col-12">{{ form_row(form.toolsRequired) }}</div>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['troubleshoot'], typeVal) }}" data-post-block="troubleshoot">
+            <div class="card-header">Hata Bilgileri</div>
+            <div class="card-body row g-3">
+                <div class="col-12">{{ form_row(form.errorContent) }}</div>
+                <div class="col-12">{{ form_row(form.errorContext) }}</div>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['comparison'], typeVal) }}" data-post-block="comparison">
+            <div class="card-header">Karşılaştırma Bilgileri</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">{{ form_row(form.compareSideA) }}</div>
+                <div class="col-md-6">{{ form_row(form.compareSideB) }}</div>
+                <div class="col-md-6">{{ form_row(form.compareSideASub) }}</div>
+                <div class="col-md-6">{{ form_row(form.compareSideBSub) }}</div>
+                <div class="col-md-4">{{ form_row(form.compareWinner) }}</div>
+                <div class="col-md-8">{{ form_row(form.compareVerdict) }}</div>
+                <div class="col-12">
+                    {{ form_row(form.compareCriteria) }}
+                    <small class="text-muted d-block mt-1">
+                        Her satır: <code>Kriter | Taraf A | Taraf B | kazanan</code> — kazanan: <code>a</code>, <code>b</code>, <code>tie</code> veya <code>-</code>
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['snippet'], typeVal) }}" data-post-block="snippet-notes">
+            <div class="card-header">Kullanım Notları <span class="text-muted fw-normal small">— isteğe bağlı</span></div>
+            <div class="card-body">
+                {{ form_widget(form.snippetNotes) }}
+                {{ form_errors(form.snippetNotes) }}
+                <small class="text-muted d-block mt-2">Kodun nasıl kullanılacağı, püf noktalar ve dikkat edilecek detaylar.</small>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3" data-post-block="content">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="content-panel-title">{{ postTypeConfig[typeVal].contentPanelTitle|default('İçerik') }}</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-media-target="editor">Medyadan görsel ekle</button>
+                    <span class="badge bg-azure-lt" id="post-type-badge">{{ typeVal }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {{ form_widget(form.content, {attr: {id: 'post_content'}}) }}
+                {{ form_errors(form.content) }}
+                <small class="text-muted" id="content-panel-hint">{{ postTypeConfig[typeVal].contentHint|default('') }}</small>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['article','page','project','software','howto','troubleshoot','comparison'], typeVal) }}" data-post-block="excerpt">
+            <div class="card-header">Özet</div>
+            <div class="card-body">
+                {{ form_widget(form.excerpt, {attr: {rows: 3, class: 'form-control'}}) }}
+                {{ form_errors(form.excerpt) }}
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['project'], typeVal) }}" data-post-block="project">
+            <div class="card-header">Proje Bilgileri</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">{{ form_row(form.repoUrl) }}</div>
+                <div class="col-md-6">{{ form_row(form.demoUrl) }}</div>
+                <div class="col-12">{{ form_row(form.techStack) }}</div>
+                <div class="col-12">
+                    {{ form_row(form.gallery) }}
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-media-target="gallery">Galeriden ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['software'], typeVal) }}" data-post-block="software">
+            <div class="card-header">Yazılım / Ürün</div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">{{ form_row(form.version) }}</div>
+                <div class="col-md-4">{{ form_row(form.distribution) }}</div>
+                <div class="col-md-4">{{ form_row(form.license) }}</div>
+                <div class="col-12">
+                    <label class="form-label">İndirme</label>
+                    <p class="text-muted small mb-2">Harici bir bağlantı girebilir veya dosya yükleyebilirsiniz. Dosya seçildiğinde indirme URL’si otomatik doldurulur.</p>
+                    {{ form_row(form.downloadUrl, {label: false}) }}
+                    <div class="mt-2">
+                        {{ form_row(form.downloadFile) }}
+                        <div id="software-download-status" class="form-text"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">{{ form_row(form.sourceUrl) }}</div>
+                <div class="col-12">{{ form_row(form.changelog) }}</div>
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['article','page','project','software','howto','troubleshoot','comparison'], typeVal) }}" data-post-block="seo">
+            <div class="card-header" role="button" data-bs-toggle="collapse" data-bs-target="#seo-body" aria-expanded="false">
+                SEO <span class="text-muted fw-normal small">— tıkla aç/kapa</span>
+            </div>
+            <div id="seo-body" class="collapse">
+                <div class="card-body border-top">
+                    {{ form_row(form.seoTitle) }}
+                    {{ form_row(form.seoDescription) }}
+                    {{ form_row(form.seoKeywords) }}
+                    <label class="form-label mt-2">OG Görseli</label>
+                    <div class="d-flex gap-2 align-items-start mb-2">
+                        <div class="img-preview" id="og-image-preview">
+                            {% if form.ogImage.vars.data %}<img src="{{ form.ogImage.vars.data }}" alt="">{% endif %}
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            <button type="button" class="btn btn-sm btn-primary" data-media-target="og">Seç</button>
+                            <button type="button" class="btn btn-sm btn-secondary" data-media-upload="og">Yükle</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-media-clear="og" hidden>Kaldır</button>
+                        </div>
+                    </div>
+                    {{ form_widget(form.ogImage) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# SAĞ — sidebar #}
+    <div class="col-lg-4">
+        <div class="card admin-form-card mb-3">
+            <div class="card-header">Yayın</div>
+            <div class="card-body">
+                {{ form_row(form.type) }}
+                {{ form_row(form.status) }}
+                {{ form_row(form.publishedAt) }}
+                <div data-post-block="publish-flags" class="{{ ui.block_visible(['article','project','software','snippet','note','howto','troubleshoot','comparison'], typeVal) }}">
+                    <div class="mt-2">{{ form_row(form.isFeatured) }}</div>
+                    <div>{{ form_row(form.isSticky) }}</div>
+                </div>
+                <hr>
+                <button type="submit" class="btn btn-primary w-100 mb-2">Kaydet</button>
+                <a href="{{ path(typeVal == 'page' ? 'admin_page_index' : 'admin_post_index') }}" class="btn btn-outline-secondary w-100">İptal</a>
+            </div>
+        </div>
+
+        {{ form_widget(form._token) }}
+        {{ form_end(form, {render_rest: false}) }}
+
+        {% if not isNew %}
+        <div class="card admin-form-card mb-3">
+            <div class="card-header" role="button" data-bs-toggle="collapse" data-bs-target="#revision-history-body" aria-expanded="false">
+                Revizyon Geçmişi
+                <span class="text-muted fw-normal small">— {{ revisions|length }} kayıt, tıkla aç/kapa</span>
+            </div>
+            <div id="revision-history-body" class="collapse">
+                <div class="card-body border-top">
+                    {% if revisions is empty %}
+                        <p class="text-muted small mb-0">Henüz revision yok.</p>
+                    {% else %}
+                        <div class="list-group list-group-flush">
+                            {% for rev in revisions %}
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">{{ rev.action|replace({'_':' '})|title }} · {{ rev.status }}</div>
+                                            <div class="small text-muted">{{ rev.createdAt|date('d.m.Y H:i') }} · {{ rev.author ? rev.author.username : 'system' }}</div>
+                                        </div>
+                                        <form method="post" action="{{ path('admin_post_restore_revision', {id: post.id, revisionId: rev.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('restore_revision_' ~ rev.id) }}">
+                                            <button class="btn btn-sm btn-outline-primary" type="submit">Geri Dön</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% set formAttr = {form: 'post-editor-form'} %}
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['article','page','project','software','snippet','howto','troubleshoot','comparison'], typeVal) }}" data-post-block="featured">
+            <div class="card-header">Öne Çıkan Görsel</div>
+            <div class="card-body">
+                <div class="img-preview img-preview-lg mb-2" id="featured-image-preview">
+                    {% if post.featuredImage %}<img src="{{ post.featuredImage }}" alt="">{% endif %}
+                </div>
+                <button type="button" class="btn btn-sm btn-primary w-100 mb-1" data-media-target="featured">Medyadan seç</button>
+                <button type="button" class="btn btn-sm btn-secondary w-100 mb-1" data-media-upload="featured">Yükle</button>
+                <button type="button" class="btn btn-sm btn-outline-danger w-100" data-media-clear="featured" hidden>Kaldır</button>
+                {{ form_widget(form.featuredImage, {attr: formAttr|merge({id: 'featured-image-input'})}) }}
+            </div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['article','project','software','snippet','howto','troubleshoot','comparison'], typeVal) }}" data-post-block="taxonomy">
+            <div class="card-header">Kategoriler</div>
+            <div class="card-body">{{ form_widget(form.categories, {attr: formAttr|merge({class: 'form-select form-select-sm', size: 4})}) }}</div>
+        </div>
+
+        <div class="card admin-form-card mb-3 {{ ui.block_visible(['article','project','software','snippet','howto','troubleshoot','comparison'], typeVal) }}" data-post-block="taxonomy">
+            <div class="card-header">Etiketler</div>
+            <div class="card-body">
+                <select id="post-tags" name="tags[]" multiple="multiple" class="form-control" data-search-url="{{ path('admin_tag_search') }}">
+                    {% for tag in post.tags %}
+                        <option value="{{ tag.id }}" selected>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted d-block mt-1">Yazmaya başlayın — var olan etiketler listelenir, yoksa yeni etiket olarak eklenir.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'admin/post/_media_picker_modal.html.twig' %}
+
+{# Blok görünürlüğü — PHP kaynaklı; eski JS bundle olsa bile çalışır #}
+<script>
+(function () {
+    function loadBlocks() {
+        try {
+            var el = document.getElementById('post-form-blocks');
+            if (el && el.textContent) {
+                return JSON.parse(el.textContent);
+            }
+        } catch (e) {
+            console.error('post-form-blocks parse:', e);
+        }
+        return null;
+    }
+
+    function toggleBlocks(type) {
+        var blocks = loadBlocks();
+        if (!blocks) {
+            return;
+        }
+        Object.keys(blocks).forEach(function (name) {
+            var types = blocks[name] || [];
+            document.querySelectorAll('[data-post-block="' + name + '"]').forEach(function (node) {
+                node.classList.toggle('d-none', types.indexOf(type) === -1);
+            });
+        });
+    }
+
+    function bindTypeToggle() {
+        var form = document.getElementById('post-editor-form');
+        var select = document.getElementById('post-type-select')
+            || (form && form.querySelector('select[name="post[type]"]'));
+        var run = function () {
+            toggleBlocks(select ? select.value : 'article');
+        };
+        if (select) {
+            select.addEventListener('change', run);
+            select.addEventListener('input', run);
+            run();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindTypeToggle);
+    } else {
+        bindTypeToggle();
+    }
+})();
+</script>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    {{ encore_entry_script_tags('admin_post_form') }}
+{% endblock %}

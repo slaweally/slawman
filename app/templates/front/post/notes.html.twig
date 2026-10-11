@@ -1,0 +1,11 @@
+{% extends 'front/layout/base.html.twig' %}
+{% import 'front/macros/post.html.twig' as ui %}
+{% import 'front/macros/layout.html.twig' as layout %}
+{% block body %}
+{{ layout.archive_header('note', 'Notlar', 'Kısa kayıtlar, hızlı notlar ve günlük log girdileri.') }}
+<div class="feed-list feed-list--notes">
+{% for post in pagination %}{{ ui.note_card(post) }}
+{% else %}<div class="empty-state"><p>Henüz not eklenmemiş.</p></div>{% endfor %}
+</div>
+{{ knp_pagination_render(pagination) }}
+{% endblock %}

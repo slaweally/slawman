@@ -1,0 +1,272 @@
+{% extends 'front/layout/base.html.twig' %}
+{% import 'front/macros/post.html.twig' as ui %}
+{% block body %}
+{% set owner = site_owner() %}
+{% set ownerName = owner ? owner.displayName : get_setting('site_title', 'Slaweally') %}
+
+{# ── Hero: canlı terminal paneli (menü tekrarı yok) ── #}
+<section class="home-hero">
+    <div class="term-window home-hero__panel">
+        <div class="term-window__bar">
+            <span class="term-window__dots"><i></i><i></i><i></i></span>
+            <span class="term-window__title font-mono">{{ ownerName|lower }}@prod — ssh</span>
+            <span class="term-window__status font-mono"><span class="home-hero__pulse"></span> online</span>
+        </div>
+        <div class="term-window__body home-hero__body font-mono">
+            <p class="home-hero__line"><span class="home-hero__prompt">$</span> cat /etc/motd</p>
+            <pre class="home-hero__motd">┌──────────────────────────────────────────┐
+│  {{ ownerName|upper }}
+│  build · break · fix · ship · document
+└──────────────────────────────────────────┘</pre>
+
+            <p class="home-hero__line"><span class="home-hero__prompt">$</span> uname -a</p>
+            <p class="home-hero__output">Linux prod 6.1.0-amd64 · x86_64 · PHP/Symfony stack</p>
+
+            <p class="home-hero__line"><span class="home-hero__prompt">$</span> neofetch --json | jq '.skills'</p>
+            <p class="home-hero__output home-hero__skills">
+                <span>Linux</span><span>PHP 8.3</span><span>Symfony</span><span>MySQL</span>
+                <span>Docker</span><span>Nginx</span><span>Bash</span><span>Git</span>
+            </p>
+
+            <p class="home-hero__line"><span class="home-hero__prompt">$</span> ls -1 ~/content/ | wc -l</p>
+            <p class="home-hero__output">
+                articles={{ stats.articles }}
+                notes={{ stats.notes }}
+                projects={{ stats.projects }}
+                packages={{ stats.software }}
+                snippets={{ stats.snippets }}
+                howto={{ stats.howto }}
+                fixes={{ stats.troubleshoot }}
+                compare={{ stats.comparisons }}
+            </p>
+
+            <p class="home-hero__line"><span class="home-hero__prompt">$</span> echo $ROLE</p>
+            <p class="home-hero__output home-hero__tagline">{{ get_setting('site_description', 'Altyapı otomasyonu, backend geliştirme ve sistem yönetimi.') }}</p>
+
+            <p class="home-hero__line home-hero__line--cursor">
+                <span class="home-hero__prompt">$</span>
+                {% if latestPost %}
+                    <a href="{{ post_path(latestPost) }}" class="home-hero__cmd">
+                        open --latest "{{ latestPost.title|default(latestPost.slug)|truncate(40) }}"
+                    </a>
+                {% else %}
+                    <span class="home-hero__cursor">_</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</section>
+
+{% if trackerEnabled %}
+<section class="tracker-panel" x-data="trackerPanel()" :class="{ 'is-open': open }">
+    <div class="term-window home-hero__panel tracker-panel__body">
+        <button type="button" class="term-window__bar tracker-panel__bar" @click="open = !open" :aria-expanded="open.toString()">
+            <span class="term-window__dots"><i></i><i></i><i></i></span>
+            <span class="term-window__title font-mono">live-tracker.log</span>
+            <span class="term-window__status font-mono">
+                <span class="home-hero__pulse"></span> streaming
+                <i class="bi tracker-panel__chevron" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </span>
+        </button>
+        <div class="tracker-panel__window">
+            <ul class="tracker-panel__log font-mono" id="tracker-log-list">
+                {% for log in trackerLogs %}
+                    <li class="tracker-panel__entry{{ log.eventType == 'alert' ? ' tracker-panel__entry--alert' : '' }}">
+                        <span class="tracker-panel__prompt">&gt;</span>
+                        <span class="tracker-panel__time">{{ log.createdAt|time_ago }}</span>
+                        <span class="tracker-panel__msg">{{ tracker_log_message(log)|raw }}</span>
+                    </li>
+                {% else %}
+                    <li class="tracker-panel__entry">
+                        <span class="tracker-panel__prompt">&gt;</span>
+                        <span class="tracker-panel__msg">-- stream boş, henüz bağlantı yok --</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if trackerHasMore %}
+                <button type="button" class="tracker-panel__more font-mono" id="tracker-load-more" data-offset="{{ trackerLogs|length }}">
+                    <span class="tracker-panel__more-prompt">$</span> fetch --more --offset={{ trackerLogs|length }}
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if owner and owner.github %}
+    <div class="home-hero__aside">
+        <a href="{{ owner.github }}" class="home-hero__gh" rel="noopener noreferrer" target="_blank">
+            <i class="fa-brands fa-github"></i> git remote -v
+        </a>
+    </div>
+{% endif %}
+
+{% if notes|length %}
+<section class="home-sticky-notes" x-data="stickyNotes()">
+    <div class="section-head">
+        <h2 class="section-title font-mono">notes.stream</h2>
+        <a href="{{ path('front_notes') }}" class="section-link font-mono">tail -f →</a>
+    </div>
+    <div class="sticky-notes-board">
+        <div class="sticky-notes-track">
+            {% for note in notes %}
+                <button type="button"
+                        class="sticky-note sticky-note--{{ loop.index0 % 6 }}"
+                        style="--note-rotate: {{ ((loop.index0 % 5) - 2) * 2.5 }}deg"
+                        data-content="{{ note.content|striptags|e('html_attr') }}"
+                        data-date="{{ note.publishedAt|time_ago }}"
+                        data-url="{{ post_path(note) }}"
+                        @click="openNote($event)">
+                    <span class="sticky-note__pin" aria-hidden="true"></span>
+                    <p class="sticky-note__text">{{ note.content|striptags|truncate(100) }}</p>
+                    <time class="sticky-note__date">{{ note.publishedAt|time_ago }}</time>
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="sticky-note-modal" :class="{ 'is-open': modalOpen }" x-cloak @keydown.escape.window="closeModal()">
+        <div class="sticky-note-modal__backdrop" @click="closeModal()"></div>
+        <div class="sticky-note-modal__sheet" x-show="modalOpen" x-transition>
+            <button type="button" class="sticky-note-modal__close" @click="closeModal()" aria-label="Kapat"><i class="bi bi-x-lg"></i></button>
+            <template x-if="active">
+                <div>
+                    <p class="sticky-note-modal__content" x-text="active.content"></p>
+                    <div class="sticky-note-modal__footer">
+                        <time class="sticky-note-modal__meta font-mono" x-text="active.date"></time>
+                        <a :href="active.url" class="btn-primary text-sm no-underline">Tam nota git →</a>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if recent|length %}
+{% set devTags = {
+    article: 'feat', note: 'log', project: 'devops', software: 'release',
+    snippet: 'code', howto: 'guide', troubleshoot: 'fix', comparison: 'vs'
+} %}
+{% set recentShowExcerpt = setting_enabled('home_recent_show_excerpt') %}
+<section class="home-section dev-feed">
+    <div class="section-head">
+        <h2 class="section-title font-mono">recent.log</h2>
+        <a href="{{ path('front_blog') }}" class="section-link font-mono">git log --all →</a>
+    </div>
+    <ul class="dev-log">
+        {% for post in recent %}
+            <li class="dev-log__row">
+                <a href="{{ post_path(post) }}" class="dev-log__link">
+                    <span class="dev-log__hash">{{ (post.slug|default('item'))|slice(0, 7) }}</span>
+                    <span class="dev-log__tag dev-log__tag--{{ post.type.value }}">{{ devTags[post.type.value]|default('dev') }}</span>
+                    <span class="dev-log__title">{{ post.title|default(post.content|striptags|truncate(70)) }}</span>
+                    {% if recentShowExcerpt %}
+                        <span class="dev-log__excerpt">{{ post.excerpt|default(post.content|striptags|truncate(90)) }}</span>
+                    {% endif %}
+                    <time class="dev-log__time">{{ post.publishedAt|time_ago }}</time>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if featured|length %}
+<section class="home-section">
+    <div class="section-head">
+        <h2 class="section-title font-mono">featured[]</h2>
+    </div>
+    <div class="showcase-list">
+        {% for post in featured %}
+            {{ ui.home_showcase(post, loop.index0 is odd) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="home-section">
+    <div class="section-head">
+        <h2 class="section-title font-mono">articles[]</h2>
+        <a href="{{ path('front_blog') }}" class="section-link font-mono">ls /blog →</a>
+    </div>
+    <div class="showcase-list">
+        {% for post in articles %}
+            {{ ui.home_showcase(post, loop.index0 is odd) }}
+        {% else %}
+            <div class="empty-state"><p>Henüz makale yayınlanmadı.</p></div>
+        {% endfor %}
+    </div>
+</section>
+
+{% if howto|length %}
+<section class="home-section">
+    <div class="section-head">
+        <h2 class="section-title font-mono">howto[]</h2>
+        <a href="{{ path('front_howto') }}" class="section-link font-mono">ls /howto →</a>
+    </div>
+    <div class="showcase-list">
+        {% for post in howto %}
+            {{ ui.home_showcase(post, loop.index0 is odd) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if troubleshoot|length %}
+<section class="home-section">
+    <div class="section-head">
+        <h2 class="section-title font-mono">fixes[]</h2>
+        <a href="{{ path('front_troubleshoot') }}" class="section-link font-mono">ls /troubleshoot →</a>
+    </div>
+    <div class="showcase-list">
+        {% for post in troubleshoot %}
+            {{ ui.home_showcase(post, loop.index0 is odd) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if comparisons|length %}
+<section class="home-section">
+    <div class="section-head">
+        <h2 class="section-title font-mono">compare[]</h2>
+        <a href="{{ path('front_compare') }}" class="section-link font-mono">ls /compare →</a>
+    </div>
+    <div class="showcase-list">
+        {% for post in comparisons %}
+            {{ ui.home_showcase(post, loop.index0 is odd) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="home-section">
+    <div class="section-head">
+        <h2 class="section-title font-mono">projects[]</h2>
+        <a href="{{ path('front_projects') }}" class="section-link font-mono">ls /projects →</a>
+    </div>
+    <div class="compact-grid">
+        {% for post in projects %}
+            {{ ui.compact_tile(post) }}
+        {% else %}
+            <p class="text-sm text-text-muted">Proje yok.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="home-section">
+    <div class="section-head">
+        <h2 class="section-title font-mono">packages[]</h2>
+        <a href="{{ path('front_software') }}" class="section-link font-mono">ls /software →</a>
+    </div>
+    <div class="compact-grid">
+        {% for post in software %}
+            {{ ui.compact_tile(post) }}
+        {% else %}
+            <p class="text-sm text-text-muted">Yazılım yok.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

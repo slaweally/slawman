@@ -1,0 +1,73 @@
+{% use "form_div_layout.html.twig" %}
+
+{% block form_row %}
+    <div class="mb-3{% if errors|length > 0 %} has-error{% endif %}">
+        {{ form_label(form) }}
+        {{ form_widget(form) }}
+        {{ form_help(form) }}
+        {{ form_errors(form) }}
+    </div>
+{% endblock %}
+
+{% block form_label %}
+    {% if label is not same as(false) %}
+        {% set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' form-label')|trim}) %}
+        {% if required %}
+            {% set label_attr = label_attr|merge({class: (label_attr.class ~ ' required')|trim}) %}
+        {% endif %}
+        <label{% for attrname, attrvalue in label_attr %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>
+            {{ label|trans({}, translation_domain) }}
+            {% if required %}<span class="text-danger">*</span>{% endif %}
+        </label>
+    {% endif %}
+{% endblock %}
+
+{% block form_widget_simple %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' form-control')|trim}) %}
+    {{ parent() }}
+{% endblock %}
+
+{% block textarea_widget %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' form-control')|trim}) %}
+    {{ parent() }}
+{% endblock %}
+
+{% block choice_widget_collapsed %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' form-select')|trim}) %}
+    {{ parent() }}
+{% endblock %}
+
+{% block choice_widget_expanded %}
+    <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+        {% for child in form %}
+            <label class="form-selectgroup-item flex-fill">
+                {{ form_widget(child, {attr: {class: 'form-selectgroup-input'}}) }}
+                <span class="form-selectgroup-label">{{ child.vars.label|trans({}, child.vars.translation_domain) }}</span>
+            </label>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block checkbox_widget %}
+    <input type="checkbox" class="form-check-input" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %}>
+{% endblock %}
+
+{% block checkbox_row %}
+    <div class="mb-3">
+        <label class="form-check form-switch">
+            {{ form_widget(form) }}
+            <span class="form-check-label">{{ form.vars.label|trans({}, form.vars.translation_domain) }}</span>
+        </label>
+        {{ form_errors(form) }}
+    </div>
+{% endblock %}
+
+{% block form_errors %}
+    {% if errors|length > 0 %}
+        <div class="invalid-feedback d-block">
+            {% for error in errors %}
+                <div>{{ error.message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

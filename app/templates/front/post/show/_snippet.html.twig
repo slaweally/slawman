@@ -1,0 +1,42 @@
+{% import 'front/macros/layout.html.twig' as layout %}
+
+{% set lang = post.programmingLanguage|default('text') %}
+
+{{ layout.breadcrumb([
+    {url: path('front_snippets'), label: 'Snippetler'},
+    {label: post.title}
+]) }}
+
+{{ layout.type_strip('snippet', lang|upper) }}
+
+<div class="detail-panel detail-panel--snippet">
+    <header class="detail-head detail-head--compact">
+        <h1 class="detail-head__title detail-head__title--sm">{{ post.title }}</h1>
+        {% include 'front/post/show/_meta.html.twig' %}
+    </header>
+
+    <div class="ide-panel" data-code-block>
+        <div class="ide-panel__tabs">
+            <span class="ide-panel__tab ide-panel__tab--active font-mono">
+                <i class="bi bi-file-code"></i> {{ post.slug }}.{{ lang }}
+            </span>
+            <span class="ide-panel__lang font-mono">{{ lang|upper }}</span>
+        </div>
+        <div class="ide-panel__toolbar">
+            <span class="ide-panel__lines font-mono">{{ post.content|split('\n')|length }} lines</span>
+            <button type="button" class="code-copy-btn" data-copy-code aria-label="Kodu kopyala">
+                <i class="bi bi-clipboard"></i> Kopyala
+            </button>
+        </div>
+        <pre class="ide-panel__code"><code class="language-{{ lang }}">{{ post.content|e }}</code></pre>
+    </div>
+
+    {% if post_meta(post, 'snippet_notes') %}
+        <section class="snippet-notes" aria-labelledby="snippet-notes-heading">
+            <h2 id="snippet-notes-heading" class="snippet-notes__title">
+                <i class="bi bi-lightbulb"></i> Kullanım Notları
+            </h2>
+            <div class="snippet-notes__body prose prose-sm">{{ post_meta(post, 'snippet_notes')|raw }}</div>
+        </section>
+    {% endif %}
+</div>

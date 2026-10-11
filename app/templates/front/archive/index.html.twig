@@ -1,0 +1,47 @@
+{% extends 'front/layout/base.html.twig' %}
+{% block title %}Arşiv{% endblock %}
+{% block body %}
+<section class="archive-room">
+    <div class="term-window archive-room__panel">
+        <div class="term-window__bar">
+            <span class="term-window__dots"><i></i><i></i><i></i></span>
+            <span class="term-window__title font-mono">~/arsiv — find . -type d</span>
+            <span class="term-window__status font-mono"><span class="home-hero__pulse"></span> {{ years|length }} yıl</span>
+        </div>
+        <div class="term-window__body archive-room__body font-mono">
+            <p class="home-hero__line"><span class="home-hero__prompt">$</span> tree --dirs-first ~/arsiv</p>
+
+            {% if years|length %}
+                <ul class="archive-tree" id="archive-tree">
+                    {% for y in years %}
+                        <li class="archive-tree__year" data-year="{{ y.year }}">
+                            <button type="button" class="archive-tree__year-toggle">
+                                <i class="bi bi-chevron-right archive-tree__chevron"></i>
+                                <i class="bi bi-folder-fill archive-tree__folder-icon"></i>
+                                <span class="archive-tree__year-label">{{ y.year }}</span>
+                                <span class="archive-tree__count">{{ y.total }} içerik</span>
+                            </button>
+                            <ul class="archive-tree__months">
+                                {% for m in y.months %}
+                                    <li class="archive-tree__month" data-year="{{ y.year }}" data-month="{{ m.month }}">
+                                        <button type="button" class="archive-tree__month-toggle">
+                                            <i class="bi bi-chevron-right archive-tree__chevron archive-tree__chevron--sm"></i>
+                                            <span class="archive-tree__month-label">{{ m.label }}</span>
+                                            <span class="archive-tree__count">({{ m.total }} İçerik)</span>
+                                        </button>
+                                        <ul class="archive-tree__items" data-items-for="{{ y.year }}-{{ m.month }}">
+                                            {# AJAX ile doldurulur (bkz. app.js — initArchiveTree) #}
+                                        </ul>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="home-hero__output">-- arşivde henüz yayınlanmış içerik yok --</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

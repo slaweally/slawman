@@ -1,0 +1,36 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}{{ isNew ? 'Yeni Kategori' : 'Kategori Düzenle' }}{% endblock %}
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_category_index') }}">Kategoriler</a></li>
+        <li class="breadcrumb-item active">{{ isNew ? 'Yeni' : 'Düzenle' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+{% block body %}
+<div class="admin-page-header">
+    <h2><i class="bi bi-folder-plus me-2 text-primary"></i>{{ isNew ? 'Yeni Kategori' : 'Kategori Düzenle' }}</h2>
+</div>
+<div class="card admin-form-card">
+    <div class="card-header"><i class="bi bi-folder2 me-2"></i>Kategori Bilgileri</div>
+    <div class="card-body">
+        {{ form_start(form) }}
+        <div class="row">
+            <div class="col-md-6">{{ form_row(form.name) }}</div>
+            <div class="col-md-6">{{ form_row(form.slug) }}</div>
+            <div class="col-12">{{ form_row(form.description) }}</div>
+            <div class="col-md-4">{{ form_row(form.icon) }}</div>
+            <div class="col-md-4">{{ form_row(form.color) }}</div>
+            <div class="col-md-4">{{ form_row(form.sortOrder) }}</div>
+            <div class="col-md-6">{{ form_row(form.parent) }}</div>
+            <div class="col-md-6">{{ form_row(form.isActive) }}</div>
+        </div>
+        <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Kaydet</button>
+            <a href="{{ path('admin_category_index') }}" class="btn btn-outline-secondary">İptal</a>
+        </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

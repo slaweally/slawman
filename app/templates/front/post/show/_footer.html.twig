@@ -1,0 +1,65 @@
+{% set related = get_related_posts(post, 4) %}
+{% set footerTags = post.tags|slice(0, 5) %}
+{% set extraTagCount = post.tags|length > 5 ? post.tags|length - 5 : 0 %}
+{% if footerTags|length or related|length %}
+<div class="detail-footer">
+    <div class="detail-footer__panel">
+        {% if footerTags|length %}
+            <section class="detail-footer__section detail-footer__section--tags">
+                <h3 class="detail-footer__label font-mono">tags[]</h3>
+                <div
+                    class="detail-footer__tags"
+                    x-data="footerTags"
+                    data-tags="{{ footerTags|map(t => {name: t.name, slug: t.slug, url: tag_path(t)})|json_encode|e('html_attr') }}"
+                    data-extra="{{ extraTagCount }}"
+                >
+                    <div class="detail-footer__tags-track" x-ref="row">
+                        <template x-for="tag in visible" :key="tag.slug">
+                            <a
+                                :href="tag.url"
+                                class="tag-pill tag-pill--footer"
+                                :title="tag.name"
+                                x-text="'#' + tag.name"
+                            ></a>
+                        </template>
+                        <a
+                            x-show="more > 0"
+                            x-cloak
+                            href="{{ path('front_tags') }}"
+                            class="tag-pill tag-pill--footer tag-pill--more"
+                            :title="moreLabel"
+                            x-text="moreText"
+                        ></a>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
+        {% if related|length %}
+            <section class="detail-footer__section detail-footer__section--related">
+                <h3 class="detail-footer__label font-mono">related[]</h3>
+                <ul class="related-list">
+                    {% for item in related %}
+                        <li class="related-list__item">
+                            <a href="{{ post_path(item) }}">
+                                <span class="related-thumb">
+                                    {% if item.featuredImage %}
+                                        <img src="{{ item.featuredImage }}" alt="{{ item.title|default('') }}" loading="lazy">
+                                    {% else %}
+                                        <span class="feed-card__thumb-ph"><i class="bi bi-journal-code"></i></span>
+                                    {% endif %}
+                                </span>
+                                <span class="related-body">
+                                    <span class="type-badge type-badge--{{ item.type.value }} type-badge--sm">{{ get_post_type_label(item.type.value) }}</span>
+                                    <span class="related-list__title">{{ item.title|default(item.content|striptags|truncate(52)) }}</span>
+                                    <time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|time_ago }}</time>
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

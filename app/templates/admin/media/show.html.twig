@@ -1,0 +1,68 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}{{ media.originalName }}{% endblock %}
+{% block page_actions %}
+    <form method="post" action="{{ path('admin_media_delete', {id: media.id}) }}" onsubmit="return confirm('Bu dosya silinsin mi?')">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ media.id) }}">
+        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i> Sil</button>
+    </form>
+{% endblock %}
+{% block body %}
+<a href="{{ path('admin_media_index') }}" class="text-muted small text-decoration-none d-inline-block mb-3"><i class="bi bi-arrow-left"></i> Medya kütüphanesi</a>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body p-0 media-detail__preview-wrap">
+                {% if media.type.value == 'image' %}
+                    <img src="{{ publicUrl }}" alt="{{ media.alt|default(media.originalName) }}" class="media-detail__preview">
+                {% elseif media.type.value == 'video' %}
+                    <video src="{{ publicUrl }}" controls class="media-detail__preview"></video>
+                {% elseif media.type.value == 'audio' %}
+                    <audio src="{{ publicUrl }}" controls class="media-detail__preview-audio"></audio>
+                {% else %}
+                    <div class="media-detail__preview-placeholder">
+                        <i class="bi bi-file-earmark display-4 text-muted"></i>
+                        <p class="text-muted mb-0">{{ media.mimeType }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header"><h3 class="card-title mb-0">Dosya bilgisi</h3></div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-4 text-muted">Tür</dt><dd class="col-8">{{ media.type.value }}</dd>
+                    <dt class="col-4 text-muted">MIME</dt><dd class="col-8">{{ media.mimeType }}</dd>
+                    <dt class="col-4 text-muted">Boyut</dt><dd class="col-8">{{ (media.size / 1024)|number_format(1) }} KB</dd>
+                    <dt class="col-4 text-muted">Yüklenme</dt><dd class="col-8">{{ media.createdAt|date('d.m.Y H:i') }}</dd>
+                    <dt class="col-4 text-muted">Yükleyen</dt><dd class="col-8">{{ media.uploader ? media.uploader.username : '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><h3 class="card-title mb-0">Bağlantı</h3></div>
+            <div class="card-body">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control font-monospace" id="media-url" value="{{ publicUrl }}" readonly>
+                    <button type="button" class="btn btn-outline-secondary" data-copy-target="#media-url"><i class="bi bi-clipboard"></i> Kopyala</button>
+                </div>
+                <a href="{{ publicUrl }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mt-2"><i class="bi bi-box-arrow-up-right me-1"></i> Yeni sekmede aç</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3 class="card-title mb-0">Düzenle</h3></div>
+            <div class="card-body">
+                {{ form_start(form) }}
+                    {{ form_row(form.alt) }}
+                    {{ form_row(form.caption) }}
+                    <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

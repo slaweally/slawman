@@ -1,0 +1,159 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}İstatistikler{% endblock %}
+{% block page_subtitle %}Gunluk, aylik ve yillik trafik analizi{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Dashboard</a>
+{% endblock %}
+{% block body %}
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item"><a class="nav-link active" href="{{ path('admin_analytics_index') }}">Genel İstatistik</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ path('admin_analytics_metrika') }}">Yandex Metrika</a></li>
+</ul>
+
+<div class="row row-cards g-3 mb-4">
+    <div class="col-md-3"><div class="card dash-stat dash-stat--purple"><div class="card-body"><div class="dash-stat__value">{{ dashboardStats.today_unique_visitors }}</div><div class="dash-stat__label">Bugün ziyaretçi</div></div></div></div>
+    <div class="col-md-3"><div class="card dash-stat dash-stat--blue"><div class="card-body"><div class="dash-stat__value">{{ dashboardStats.today_page_views }}</div><div class="dash-stat__label">Bugün görüntülenme</div></div></div></div>
+    <div class="col-md-3"><div class="card dash-stat dash-stat--green"><div class="card-body"><div class="dash-stat__value">{{ dashboardStats.week_unique_visitors }}</div><div class="dash-stat__label">7 gün ziyaretçi</div></div></div></div>
+    <div class="col-md-3"><div class="card dash-stat dash-stat--orange"><div class="card-body"><div class="dash-stat__value">{{ report.totals.page_views }}</div><div class="dash-stat__label">Toplam görüntülenme</div></div></div></div>
+</div>
+
+<form method="get" class="card mb-4">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-end">
+        <div>
+            <label class="form-label small">Yıl</label>
+            <select name="year" class="form-select form-select-sm">
+                {% for y in report.years %}
+                    <option value="{{ y }}"{{ report.year == y ? ' selected' : '' }}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small">Ay</label>
+            <select name="month" class="form-select form-select-sm">
+                {% for m in 1..12 %}
+                    <option value="{{ m }}"{{ report.month == m ? ' selected' : '' }}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Göster</button>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header"><h3 class="card-title mb-0">{{ report.year }} — Aylık trafik</h3></div>
+            <div class="card-body">
+                <div class="dash-chart">
+                    {% for m in report.monthly %}
+                        <div class="dash-chart__col" title="{{ m.label }}: {{ m.unique_visitors }} ziyaretçi / {{ m.page_views }} görüntülenme">
+                            <div class="dash-chart__bar-wrap">
+                                <div class="dash-chart__bar dash-chart__bar--views" style="height: {{ (m.page_views / maxMonthly * 100)|round }}%"></div>
+                                <div class="dash-chart__bar dash-chart__bar--visitors" style="height: {{ (m.unique_visitors / maxMonthly * 100)|round }}%"></div>
+                            </div>
+                            <span class="dash-chart__label">{{ m.label }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h3 class="card-title mb-0">Yıllık özet</h3></div>
+            <div class="table-responsive">
+                <table class="table table-sm card-table">
+                    <thead><tr><th>Yıl</th><th>Ziyaretçi</th><th>Görüntülenme</th></tr></thead>
+                    <tbody>
+                    {% for y in report.yearly %}
+                        <tr>
+                            <td><a href="{{ path('admin_analytics_index', {year: y.year, month: 1}) }}">{{ y.year }}</a></td>
+                            <td>{{ y.unique_visitors }}</td>
+                            <td>{{ y.page_views }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" class="text-muted">Henüz veri yok.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h3 class="card-title mb-0">{{ report.year }}/{{ '%02d'|format(report.month) }} — Günlük detay</h3></div>
+    <div class="card-body">
+        <div class="dash-chart mb-3">
+            {% for day in report.daily %}
+                {% if day.page_views > 0 or day.unique_visitors > 0 %}
+                <div class="dash-chart__col" title="{{ day.date }}: {{ day.unique_visitors }} / {{ day.page_views }}">
+                    <div class="dash-chart__bar-wrap" style="height:100px">
+                        <div class="dash-chart__bar dash-chart__bar--views" style="height: {{ (day.page_views / maxDaily * 100)|round }}%"></div>
+                    </div>
+                    <span class="dash-chart__label">{{ day.label }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-vcenter">
+                <thead><tr><th>Tarih</th><th>Ziyaretçi</th><th>Görüntülenme</th></tr></thead>
+                <tbody>
+                {% for day in report.daily|reverse %}
+                    {% if day.page_views > 0 or day.unique_visitors > 0 %}
+                    <tr>
+                        <td>{{ day.date|slice(8, 2) }}.{{ day.date|slice(5, 2) }}.{{ day.date|slice(0, 4) }}</td>
+                        <td>{{ day.unique_visitors }}</td>
+                        <td>{{ day.page_views }}</td>
+                    </tr>
+                    {% endif %}
+                {% else %}
+                    <tr><td colspan="3" class="text-muted">Bu ay için kayıt yok.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h3 class="card-title mb-0">En çok okunan</h3></div>
+            <div class="list-group list-group-flush">
+                {% for post in report.top_views %}
+                    <div class="list-group-item d-flex justify-content-between gap-2">
+                        <a href="{{ path('admin_post_edit', {id: post.id}) }}" class="small">{{ post.title|default(post.slug)|truncate(40) }}</a>
+                        <span class="badge bg-blue-lt">{{ post.viewCount }}</span>
+                    </div>
+                {% else %}<div class="list-group-item text-muted">Veri yok.</div>{% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h3 class="card-title mb-0">En çok yorumlanan</h3></div>
+            <div class="list-group list-group-flush">
+                {% for item in report.top_comments %}
+                    <div class="list-group-item d-flex justify-content-between gap-2">
+                        <a href="{{ path('admin_post_edit', {id: item.post.id}) }}" class="small">{{ item.post.title|default(item.post.slug)|truncate(40) }}</a>
+                        <span class="badge bg-green-lt">{{ item.count }}</span>
+                    </div>
+                {% else %}<div class="list-group-item text-muted">Veri yok.</div>{% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h3 class="card-title mb-0">Popüler etiketler</h3></div>
+            <div class="card-body d-flex flex-wrap gap-2">
+                {% for tag in report.popular_tags %}
+                    <a href="{{ tag_path(tag) }}" class="badge bg-secondary-lt text-decoration-none" target="_blank" rel="noopener">#{{ tag.name }}</a>
+                {% else %}<span class="text-muted small">Veri yok.</span>{% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

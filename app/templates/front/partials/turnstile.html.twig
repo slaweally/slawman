@@ -1,0 +1,3 @@
+{% if turnstile_enabled() %}
+<div class="turnstile-wrap" data-turnstile data-sitekey="{{ turnstile_site_key() }}"></div>
+{% endif %}

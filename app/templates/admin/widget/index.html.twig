@@ -1,0 +1,28 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% block title %}Sidebar Widgetlar{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('admin_widget_new') }}" class="btn btn-primary btn-sm">Yeni Widget</a>
+{% endblock %}
+{% block body %}
+<div class="card"><div class="table-responsive"><table class="table card-table">
+    <thead><tr><th>Başlık</th><th>Sıra</th><th>Durum</th><th></th></tr></thead>
+    <tbody>
+    {% for widget in widgets %}
+        <tr>
+            <td>{{ widget.title }}</td>
+            <td>{{ widget.sortOrder }}</td>
+            <td>{{ widget.isActive ? 'Aktif' : 'Pasif' }}</td>
+            <td class="text-end">
+                <a href="{{ path('admin_widget_edit', {id: widget.id}) }}" class="btn btn-sm">Düzenle</a>
+                <form method="post" action="{{ path('admin_widget_delete', {id: widget.id}) }}" class="d-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ widget.id) }}">
+                    <button class="btn btn-sm btn-danger">Sil</button>
+                </form>
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="4" class="text-muted">Özel widget yok. Profil, son içerikler vb. Ayarlar → Sidebar sekmesinden yönetilir.</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div></div>
+{% endblock %}

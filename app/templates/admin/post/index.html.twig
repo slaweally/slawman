@@ -1,0 +1,151 @@
+{% extends 'admin/layout/base.html.twig' %}
+{% set filtersActive = filters.q or filters.type or filters.status or filters.category or filters.date_from or filters.date_to or filters.min_comments %}
+{% block title %}İçerikler{% endblock %}
+{% block page_actions %}
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#post-filters" aria-expanded="{{ filtersActive ? 'true' : 'false' }}" aria-controls="post-filters">
+            <i class="bi bi-funnel me-1"></i> Filtreler{% if filtersActive %} <span class="badge bg-primary ms-1">aktif</span>{% endif %}
+        </button>
+        <form method="post" action="{{ path('admin_post_fix_featured') }}" class="d-inline" onsubmit="return confirm('Kapak görseli olmayan içeriklere içerik/meta görselleri atanacak. Devam?')">
+            <input type="hidden" name="_token" value="{{ csrf_token('fix_featured') }}">
+            <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-image me-1"></i> Kapak Görsellerini Düzelt</button>
+        </form>
+        <a href="{{ path('admin_post_new') }}" class="btn btn-primary btn-sm">Yeni İçerik</a>
+    </div>
+{% endblock %}
+{% block body %}
+<div class="collapse{{ filtersActive ? ' show' : '' }} mb-3 admin-filter-card" id="post-filters">
+<div class="card">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Ara</label>
+                <input type="search" name="q" class="form-control form-control-sm" value="{{ filters.q }}" placeholder="Başlık, slug, içerik...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Tip</label>
+                <select name="type" class="form-select form-select-sm">
+                    <option value="">Tümü</option>
+                    {% for t in postTypes %}
+                        <option value="{{ t.value }}"{{ filters.type == t.value ? ' selected' : '' }}>{{ get_post_type_label(t.value) }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Durum</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Tümü</option>
+                    {% for s in postStatuses %}
+                        <option value="{{ s.value }}"{{ filters.status == s.value ? ' selected' : '' }}>{{ s.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Kategori</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">Tümü</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.slug }}"{{ filters.category == cat.slug ? ' selected' : '' }}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small mb-1">Min yorum</label>
+                <input type="number" name="min_comments" class="form-control form-control-sm" min="0" value="{{ filters.min_comments ?: '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Başlangıç</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Bitiş</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ filters.date_to }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Sırala</label>
+                <select name="sort" class="form-select form-select-sm">
+                    <option value="date"{{ filters.sort == 'date' ? ' selected' : '' }}>Tarih</option>
+                    <option value="title"{{ filters.sort == 'title' ? ' selected' : '' }}>Başlık</option>
+                    <option value="comments"{{ filters.sort == 'comments' ? ' selected' : '' }}>Yorum</option>
+                    <option value="views"{{ filters.sort == 'views' ? ' selected' : '' }}>Görüntülenme</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small mb-1">Yön</label>
+                <select name="direction" class="form-select form-select-sm">
+                    <option value="desc"{{ filters.direction == 'desc' ? ' selected' : '' }}>↓</option>
+                    <option value="asc"{{ filters.direction == 'asc' ? ' selected' : '' }}>↑</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Sayfa başı</label>
+                <select name="per_page" class="form-select form-select-sm">
+                    {% for n in [10, 20, 50] %}
+                        <option value="{{ n }}"{{ app.request.query.getInt('per_page', 20) == n ? ' selected' : '' }}>{{ n }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filtrele</button>
+                <a href="{{ path('admin_post_index') }}" class="btn btn-outline-secondary btn-sm">Sıfırla</a>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
+<div class="card admin-list-card">
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table table-hover">
+            <thead>
+                <tr>
+                    <th style="width:56px"></th>
+                    <th>Başlık</th>
+                    <th>Tip</th>
+                    <th>Kategori</th>
+                    <th>Yorum</th>
+                    <th>Durum</th>
+                    <th>Tarih</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for post in pagination %}
+                <tr>
+                    <td>
+                        {% if post.featuredImage %}
+                            <img src="{{ post.featuredImage }}" alt="" class="rounded border" style="width:48px;height:36px;object-fit:cover;">
+                        {% else %}
+                            <span class="avatar avatar-sm bg-secondary-lt"><i class="bi bi-image"></i></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ path('admin_post_edit', {id: post.id}) }}" class="text-reset fw-medium">{{ post.title|default(post.content|truncate(50)) }}</a>
+                        <div class="text-muted small">{{ post.slug }}</div>
+                    </td>
+                    <td><span class="badge bg-secondary-lt">{{ get_post_type_label(post.type.value) }}</span></td>
+                    <td class="small text-muted">
+                        {% for cat in post.categories|slice(0, 2) %}{{ cat.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}
+                    </td>
+                    <td>{{ post.comments|length }}</td>
+                    <td><span class="badge {{ post.status.value == 'published' ? 'bg-success-lt' : 'bg-warning-lt' }}">{{ post.status.value }}</span></td>
+                    <td class="text-muted small">{{ post.publishedAt|default(post.createdAt)|date('d.m.Y H:i') }}</td>
+                    <td class="text-end">
+                        <a href="{{ path('admin_post_edit', {id: post.id}) }}" class="btn btn-sm">Düzenle</a>
+                        <form method="post" action="{{ path('admin_post_delete', {id: post.id}) }}" class="d-inline" onsubmit="return confirm('Silinsin mi?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ post.id) }}">
+                            <button class="btn btn-sm btn-danger">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-muted text-center py-4">Kayıt bulunamadı.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination.pageCount > 1 %}
+    <div class="card-footer">{{ knp_pagination_render(pagination, 'admin/partials/pagination.html.twig') }}</div>
+    {% endif %}
+</div>
+{% endblock %}
